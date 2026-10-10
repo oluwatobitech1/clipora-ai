@@ -1,18 +1,22 @@
-# Start here (no Supabase, no accounts)
+# Video to Audio
 
-1. Install Node 22+ and FFmpeg (`winget install Gyan.FFmpeg`, then close and reopen VS Code; check `ffmpeg -version`).
-2. In the VS Code terminal, in this folder: `npm install`
-3. `npm run dev`
-4. Open http://localhost:5173 (NOT preview/framevox-preview.html, NOT Live Server on port 5500).
-5. Tools > Video to Audio > choose a video > Extract audio > Download.
+A one-page website that converts a video to MP3, WAV or M4A. Everything happens in the visitor's browser: no server, no sign-up, nothing is uploaded.
 
-**Transcribe is free and needs no key.** It runs Whisper on your computer. The first time, it downloads a speech model once (about 80 MB, needs internet); after that it also works offline. It is slower than paid cloud services, so try a short clip first.
-Prefer faster cloud transcription? Put `OPENAI_API_KEY=sk-...` in a `.env` file (copy `.env.example`) and restart: the key is then used automatically.
+## Run it on your computer
+1. Install Node.js 22 or newer.
+2. In this folder run: `npm install`
+3. Then run: `npm run dev`
+4. Open http://localhost:5173
 
-**Paste a link (optional):** to fetch videos from YouTube, TikTok, Instagram, X, Facebook, Vimeo and similar sites, install the free yt-dlp tool once (`winget install yt-dlp.yt-dlp`, then close and reopen VS Code; check `yt-dlp --version`). Then use the "Paste a link" tab. Only public videos work, and you must have the right to use them. Keep yt-dlp updated (`yt-dlp -U`) because sites change often.
+## Put it online (Vercel)
+- Import the repository in Vercel and set **Root Directory** to `apps/web`.
+- Build command: `npm run build` (the default). Output directory: `dist`.
+- No environment variables are needed.
 
-Tip: copy a link, then press Ctrl+V anywhere on the page. If a site asks for a login first (Instagram and YouTube often do), copy `.env.example` to `.env`, add `YTDLP_COOKIES_BROWSER=chrome` (or edge, firefox, brave), restart, and make sure you are signed in to that site in that browser. Framevox then borrows your own session on your own computer; it never leaves it. Close the browser first if it reports the cookie file is locked.
+## Where things are
+- `apps/web/src/App.tsx`: the page (headline, features, how it works, questions).
+- `apps/web/src/components/Converter.tsx`: the converter itself.
+- `apps/web/src/components/Logo.tsx` and `apps/web/public/favicon.svg`: the logo.
+- `apps/web/index.html`: page title and description for Google and link previews.
 
-Local mode runs only on your own computer: no sign-in, files live in a temp folder and are deleted after 2 hours or when you click Delete.
-
-Want accounts, cloud storage and a public website later? Use the Supabase version: `npm run dev:cloud` and see README.md.
+The folders `apps/api`, `apps/worker`, `apps/local` and `supabase` are not used by this website and can be ignored.

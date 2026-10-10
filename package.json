@@ -10,7 +10,7 @@
     "node": ">=22"
   },
   "scripts": {
-    "dev": "concurrently -k -n local,web -c blue,magenta \"npm:dev:local-api\" \"npm:dev:web\"",
+    "dev": "npm run dev -w @framevox/web",
     "dev:web": "npm run dev -w @framevox/web",
     "dev:api": "npm run dev -w @framevox/api",
     "dev:worker": "npm run dev -w @framevox/worker",
@@ -18,10 +18,10 @@
     "typecheck": "npm run typecheck --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
-    "dev:local": "concurrently -k -n local,web -c blue,magenta \"npm:dev:local-api\" \"npm:dev:web\"",
+    "dev:local": "npm run dev -w @framevox/web",
     "dev:local-api": "npm run dev -w @framevox/local",
     "dev:cloud": "concurrently -k -n api,worker,web -c blue,green,magenta \"npm:dev:api\" \"npm:dev:worker\" \"npm:dev:web\"",
-    "start": "concurrently -k -n local,web -c blue,magenta \"npm:dev:local-api\" \"npm:dev:web\""
+    "start": "npm run dev -w @framevox/web"
   },
   "devDependencies": {
     "concurrently": "^9.0.0"

@@ -42,12 +42,20 @@ export interface LocalConfig {
   /** Tests only: lets links to this computer through. */
   allowPrivateLinkHosts?: boolean;
   provider?: TranscriptionProvider; // tests inject one
+  /** Hosted link server: only link import (no uploads, no transcription), reachable from your website. */
+  linkOnly?: boolean;
+  /** Websites allowed to call this server from a browser (CORS). Needed for linkOnly. */
+  corsOrigins?: string[];
+  host?: string;
+  cookiesFile?: string;
+  /** Link imports allowed per visitor per hour (linkOnly). */
+  linkRatePerHour?: number;
 }
 
 export function configFromEnv(env: NodeJS.ProcessEnv = process.env): LocalConfig {
   const num = (k: string, d: number) => (Number(env[k]) > 0 ? Number(env[k]) : d);
   return {
-    port: num("API_PORT", 3001),
+    port: num("PORT", num("API_PORT", 3001)),
     maxUploadMb: num("LOCAL_MAX_UPLOAD_MB", 500),
     maxDurationSeconds: num("MAX_MEDIA_DURATION_MINUTES", 240) * 60,
     retentionMs: num("RETENTION_HOURS", 2) * 3600_000,
@@ -56,11 +64,16 @@ export function configFromEnv(env: NodeJS.ProcessEnv = process.env): LocalConfig
     transcribeModel: env.TRANSCRIBE_MODEL || "whisper-1",
     chunkSeconds: num("TRANSCRIBE_CHUNK_SECONDS", 0), // 0 = pick by engine
     engine: env.TRANSCRIBE_ENGINE === "local" || env.TRANSCRIBE_ENGINE === "openai" ? env.TRANSCRIBE_ENGINE : "auto",
-    localModel: env.LOCAL_WHISPER_MODEL || "Xenova/whisper-base",
+    localModel: env.LOCAL_WHISPER_MODEL || "Xenova/whisper-tiny",
     ffmpegTimeoutMs: num("FFMPEG_TIMEOUT_SECONDS", 1800) * 1000,
     ytdlpPath: env.YTDLP_PATH || "yt-dlp",
     linkTimeoutMs: num("LINK_TIMEOUT_MINUTES", 15) * 60_000,
     cookiesBrowser: parseCookiesBrowser(env.YTDLP_COOKIES_BROWSER),
+    linkOnly: env.LINK_SERVER === "1",
+    corsOrigins: (env.CORS_ORIGIN ?? "").split(",").map((s) => s.trim().replace(/\/+$/, "")).filter(Boolean),
+    host: env.LINK_SERVER === "1" ? "0.0.0.0" : "127.0.0.1",
+    cookiesFile: env.YTDLP_COOKIES_FILE || undefined,
+    linkRatePerHour: num("LINK_RATE_PER_HOUR", 20),
   };
 }
 
@@ -93,7 +106,32 @@ interface LinkJob {
 const RETRYABLE: ErrorCode[] = ["processing_failed", "transcription_failed", "internal_error"];
 
 export async function buildLocalApp(config: LocalConfig) {
-  const app = Fastify({ logger: { level: "info" }, bodyLimit: 1024 * 1024 });
+  const app = Fastify({ logger: { level: "info" }, bodyLimit: 1024 * 1024, trustProxy: !!config.linkOnly });
+
+  // Browser access from the website (CORS), and in link-only mode nothing but link import is reachable.
+  const patterns = (config.corsOrigins ?? []).map((o) =>
+    o === "*" ? /^https?:\/\/.+$/ : new RegExp(`^${o.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replace(/\*/g, "[a-z0-9-]+")}$`, "i"));
+  const originAllowed = (origin: string) => patterns.some((re) => re.test(origin));
+  app.addHook("onRequest", async (request, reply) => {
+    const origin = request.headers.origin;
+    if (origin && originAllowed(origin)) {
+      reply.header("Access-Control-Allow-Origin", origin).header("Vary", "Origin")
+        .header("Access-Control-Allow-Methods", "GET,POST,DELETE,OPTIONS").header("Access-Control-Allow-Headers", "content-type").header("Access-Control-Max-Age", "600");
+    }
+    if (request.method === "OPTIONS") return reply.code(204).send();
+    if (config.linkOnly && !/^\/api\/(local\/links|mode|health)(\/|$)/.test(request.url.split("?")[0]!)) {
+      return reply.code(404).send({ error: { code: "not_found", message: "Not found." } });
+    }
+  });
+  const hits = new Map<string, number[]>();
+  const rateLimited = (ip: string) => {
+    if (!config.linkOnly) return false;
+    const now = Date.now();
+    const recent = (hits.get(ip) ?? []).filter((t) => now - t < 3600_000);
+    if (recent.length >= (config.linkRatePerHour ?? 20)) { hits.set(ip, recent); return true; }
+    recent.push(now); hits.set(ip, recent);
+    return false;
+  };
   await app.register(multipart, { limits: { fileSize: config.maxUploadMb * 1024 * 1024, files: 1, fields: 10 } });
 
   const root = await mkdtemp(join(tmpdir(), "framevox-local-"));
@@ -112,6 +150,8 @@ export async function buildLocalApp(config: LocalConfig) {
         ? new OpenAIProvider({ apiKey: config.openaiApiKey, baseUrl: config.openaiBaseUrl, model: config.transcribeModel, timeoutMs: 300_000 })
         : null
       : new LocalWhisperProvider({ model: config.localModel }));
+  // Load the speech model now, in the background, so the first transcription does not wait for it.
+  if (provider instanceof LocalWhisperProvider && !config.provider && !config.linkOnly) provider.warmup();
   const engine = config.provider ? "custom" : useOpenAI ? "openai" : "local-whisper";
   // Local Whisper is slow, so smaller pieces keep the progress bar moving.
   const chunkSeconds = config.chunkSeconds || (engine === "local-whisper" ? 180 : 600);
@@ -202,7 +242,7 @@ export async function buildLocalApp(config: LocalConfig) {
     }
   }
 
-  app.get("/api/mode", async () => ({ mode: "local", transcription: !!provider, engine, links: await checkYtdlp() }));
+  app.get("/api/mode", async () => ({ mode: config.linkOnly ? "links" : "local", transcription: !!provider, engine, links: await checkYtdlp() }));
 
   // ---- Link import: fetch a video from a web link, then hand the file to the browser like a normal upload ----
   const linkDto = (l: LinkJob) => ({
@@ -219,8 +259,11 @@ export async function buildLocalApp(config: LocalConfig) {
     await rm(l.dir, { recursive: true, force: true });
   }
 
-  app.post<{ Body: { url?: unknown; confirmed?: unknown } }>("/api/local/links", async (request, reply) => {
+  app.post<{ Body: { url?: unknown; confirmed?: unknown; audioOnly?: unknown } }>("/api/local/links", async (request, reply) => {
     const body = request.body ?? {};
+    if (rateLimited(request.ip)) {
+      throw Object.assign(new Error("You have fetched a lot of links this hour. Please try again later, or upload the file instead."), { statusCode: 429, code: "busy" });
+    }
     if (body.confirmed !== true) {
       throw Object.assign(new Error("Please confirm that you own this content or have permission to use it."), { statusCode: 400, code: "consent_required" });
     }
@@ -252,7 +295,7 @@ export async function buildLocalApp(config: LocalConfig) {
       try {
         const res = await fetchLink(url, dir, {
           ytdlpPath: config.ytdlpPath, maxMb: config.maxUploadMb, maxDurationSeconds: config.maxDurationSeconds,
-          timeoutMs: config.linkTimeoutMs, cookiesBrowser: config.cookiesBrowser, signal: link.abort.signal, onProgress: (f) => { link.progress = f; },
+          timeoutMs: config.linkTimeoutMs, cookiesBrowser: config.cookiesBrowser, cookiesFile: config.cookiesFile, audioOnly: body.audioOnly === true, signal: link.abort.signal, onProgress: (f) => { link.progress = f; },
         });
         link.filePath = res.path; link.fileName = res.name; link.sizeBytes = (await stat(res.path)).size;
         link.progress = 1; link.status = "ready";
