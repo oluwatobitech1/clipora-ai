@@ -49,11 +49,22 @@ export function MediaSource({ file, onFileChange, audioOnly }: Props) {
   const abortRef = useRef<AbortController | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const id = useId();
-  const remote = mode?.local !== true && LINK_API !== ""; // hosted site with a link server
+  const [linkServerOk, setLinkServerOk] = useState<boolean | null>(null); // null = still checking
+  const remote = mode !== null && mode.local !== true && LINK_API !== "" && linkServerOk !== false; // hosted site with a working link server
   const canLink = mode?.local === true || remote;
+  const onLocalhost = typeof window !== "undefined" && ["localhost", "127.0.0.1"].includes(window.location.hostname);
   const active = !file && canLink;
-  useEffect(() => { if (remote) void fetch(`${LINK_API}/api/health`).catch(() => {}); }, [remote]); // wakes a sleeping free server
-  const showTabs = !file; // the link box is always visible; it explains itself when the local server is not running
+  // Ask the link server if it is really usable from this website. If not, the tab is hidden (no errors for visitors).
+  useEffect(() => {
+    if (!LINK_API || mode === null || mode.local) return;
+    let live = true;
+    fetch(`${LINK_API}/api/mode`, { signal: AbortSignal.timeout(45_000) }) // generous: a free server may be waking up
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j: { links?: boolean } | null) => { if (live) setLinkServerOk(j?.links === true); })
+      .catch(() => { if (live) setLinkServerOk(false); });
+    return () => { live = false; };
+  }, [mode]);
+  const showTabs = !file && (canLink || (mode !== null && onLocalhost)); // hidden on a live site with no working link server; on your own computer it explains how to start it
 
   const parsed = parseLink(url);
   const busy = phase.kind === "fetching";
@@ -173,7 +184,7 @@ export function MediaSource({ file, onFileChange, audioOnly }: Props) {
               </Notice>
             </div>
           )}
-          {canLink && mode?.links === false && (
+          {mode?.local === true && mode.links === false && (
             <div className="mb-4">
               <Notice tone="error">
                 Link import needs the free tool <strong>yt-dlp</strong>. Windows: run <code className="rounded bg-white px-1">winget install yt-dlp.yt-dlp</code>, then close and reopen this app. Mac: <code className="rounded bg-white px-1">brew install yt-dlp</code>.

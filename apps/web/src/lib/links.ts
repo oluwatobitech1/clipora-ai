@@ -3,11 +3,24 @@ import { isAbort } from "./mode";
 /** Address of the hosted link server (set VITE_LINK_API on Vercel). Empty = use the local server on this computer. */
 export const LINK_API = ((import.meta.env.VITE_LINK_API as string | undefined) ?? "").replace(/\/+$/, "");
 
-const OFFLINE = "The link server is waking up or offline. Wait about 30 seconds and try again, or upload the file instead.";
+/** Tells a sleeping/offline server apart from one that is up but refuses this website (CORS). */
+async function explainNetworkFailure(url: string): Promise<LinkImportError> {
+  if (!LINK_API || !url.startsWith(LINK_API)) {
+    return new LinkImportError("link_network", "Could not reach the local server. Is `npm run dev` still running?");
+  }
+  let reachable = false;
+  try {
+    await fetch(`${LINK_API}/api/health`, { mode: "no-cors", signal: AbortSignal.timeout(8000) });
+    reachable = true; // an opaque answer still proves the server is up
+  } catch { /* offline or asleep */ }
+  return reachable
+    ? new LinkImportError("link_cors", `The link server is running but does not allow this website yet. On Render, open the service > Environment, set CORS_ORIGIN to * (or to ${window.location.origin}), save, and let it redeploy.`)
+    : new LinkImportError("link_network", "The link server did not answer. If it is on a free plan it may be waking up: wait about a minute and try again. Otherwise check that VITE_LINK_API on Vercel is the exact Render address (https://..., no / at the end), then redeploy.");
+}
 async function call(url: string, init?: RequestInit): Promise<Response> {
   try { return await fetch(url, init); } catch (err) {
     if (isAbort(err)) throw err;
-    throw new LinkImportError("link_network", OFFLINE);
+    throw await explainNetworkFailure(url);
   }
 }
 

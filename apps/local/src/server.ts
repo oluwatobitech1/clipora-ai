@@ -109,10 +109,12 @@ export async function buildLocalApp(config: LocalConfig) {
   const app = Fastify({ logger: { level: "info" }, bodyLimit: 1024 * 1024, trustProxy: !!config.linkOnly });
 
   // Browser access from the website (CORS), and in link-only mode nothing but link import is reachable.
-  const allowed = new Set(config.corsOrigins ?? []);
+  const patterns = (config.corsOrigins ?? []).map((o) =>
+    o === "*" ? /^https?:\/\/.+$/ : new RegExp(`^${o.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replace(/\*/g, "[a-z0-9-]+")}$`, "i"));
+  const originAllowed = (origin: string) => patterns.some((re) => re.test(origin));
   app.addHook("onRequest", async (request, reply) => {
     const origin = request.headers.origin;
-    if (origin && allowed.has(origin)) {
+    if (origin && originAllowed(origin)) {
       reply.header("Access-Control-Allow-Origin", origin).header("Vary", "Origin")
         .header("Access-Control-Allow-Methods", "GET,POST,DELETE,OPTIONS").header("Access-Control-Allow-Headers", "content-type").header("Access-Control-Max-Age", "600");
     }
