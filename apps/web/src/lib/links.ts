@@ -1,5 +1,16 @@
 import { isAbort } from "./mode";
 
+/** Address of the hosted link server (set VITE_LINK_API on Vercel). Empty = use the local server on this computer. */
+export const LINK_API = ((import.meta.env.VITE_LINK_API as string | undefined) ?? "").replace(/\/+$/, "");
+
+const OFFLINE = "The link server is waking up or offline. Wait about 30 seconds and try again, or upload the file instead.";
+async function call(url: string, init?: RequestInit): Promise<Response> {
+  try { return await fetch(url, init); } catch (err) {
+    if (isAbort(err)) throw err;
+    throw new LinkImportError("link_network", OFFLINE);
+  }
+}
+
 interface LinkStatus {
   id: string;
   status: "downloading" | "ready" | "failed";
@@ -38,10 +49,11 @@ const MIME_BY_EXT: Record<string, string> = {
  */
 export async function importFromLink(
   url: string,
-  opts: { onProgress?: (fraction: number | null) => void; signal?: AbortSignal; audioOnly?: boolean } = {},
+  opts: { onProgress?: (fraction: number | null) => void; signal?: AbortSignal; audioOnly?: boolean; remote?: boolean } = {},
 ): Promise<File> {
+  const base = opts.remote ? LINK_API : "";
   const start = await json<LinkStatus>(
-    await fetch("/api/local/links", {
+    await call(`${base}/api/local/links`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ url, confirmed: true, audioOnly: opts.audioOnly === true }),
@@ -49,18 +61,18 @@ export async function importFromLink(
     }),
   );
   const id = start.id;
-  const cleanup = () => { void fetch(`/api/local/links/${id}`, { method: "DELETE" }).catch(() => {}); };
+  const cleanup = () => { void fetch(`${base}/api/local/links/${id}`, { method: "DELETE" }).catch(() => {}); };
   opts.signal?.addEventListener("abort", cleanup, { once: true });
 
   try {
     for (;;) {
       if (opts.signal?.aborted) throw new DOMException("Cancelled", "AbortError");
       await new Promise((r) => setTimeout(r, 300));
-      const st = await json<LinkStatus>(await fetch(`/api/local/links/${id}`, { signal: opts.signal }));
+      const st = await json<LinkStatus>(await call(`${base}/api/local/links/${id}`, { signal: opts.signal }));
       opts.onProgress?.(st.progress);
       if (st.status === "failed") throw new LinkImportError(st.errorCode ?? "link_failed", st.message ?? "Could not fetch this link.");
       if (st.status === "ready") {
-        const res = await fetch(`/api/local/links/${id}/file`, { signal: opts.signal });
+        const res = await call(`${base}/api/local/links/${id}/file`, { signal: opts.signal });
         if (!res.ok) throw new LinkImportError("link_failed", "The video was fetched but could not be loaded. Please try again.");
         const blob = await res.blob();
         const name = st.fileName ?? "video.mp4";

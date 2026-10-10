@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useId, useRef, useState, type ClipboardEvent, type KeyboardEvent } from "react";
-import { importFromLink, LinkImportError } from "../lib/links";
+import { importFromLink, LINK_API, LinkImportError } from "../lib/links";
 import { isAbort, useMode } from "../lib/mode";
 import { parseLink } from "../lib/platform";
 import { UploadZone } from "./UploadZone";
@@ -49,8 +49,10 @@ export function MediaSource({ file, onFileChange, audioOnly }: Props) {
   const abortRef = useRef<AbortController | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const id = useId();
-  const canLink = mode?.local === true;
+  const remote = mode?.local !== true && LINK_API !== ""; // hosted site with a link server
+  const canLink = mode?.local === true || remote;
   const active = !file && canLink;
+  useEffect(() => { if (remote) void fetch(`${LINK_API}/api/health`).catch(() => {}); }, [remote]); // wakes a sleeping free server
   const showTabs = !file; // the link box is always visible; it explains itself when the local server is not running
 
   const parsed = parseLink(url);
@@ -63,7 +65,7 @@ export function MediaSource({ file, onFileChange, audioOnly }: Props) {
     abortRef.current = ctl;
     setPhase({ kind: "fetching", pct: null, platform });
     try {
-      const f = await importFromLink(target, { signal: ctl.signal, audioOnly, onProgress: (pct) => setPhase({ kind: "fetching", pct, platform }) });
+      const f = await importFromLink(target, { signal: ctl.signal, audioOnly, remote, onProgress: (pct) => setPhase({ kind: "fetching", pct, platform }) });
       setPhase({ kind: "idle" });
       setUrl("");
       onFileChange(f);
@@ -77,7 +79,7 @@ export function MediaSource({ file, onFileChange, audioOnly }: Props) {
     } finally {
       abortRef.current = null;
     }
-  }, [onFileChange, audioOnly]);
+  }, [onFileChange, audioOnly, remote]);
 
   /** Takes pasted text: shows the clean link, and starts fetching when permission was already confirmed. */
   const takePasted = useCallback((text: string) => {

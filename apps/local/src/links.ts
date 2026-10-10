@@ -129,6 +129,8 @@ export interface FetchOptions {
   cookiesBrowser?: string;
   /** Speech tools only need sound: fetch just the audio track (much smaller and faster than video). */
   audioOnly?: boolean;
+  /** Netscape-format cookies.txt (hosted link server only; lets YouTube/Instagram see a signed-in session). */
+  cookiesFile?: string;
   onProgress?: (fraction: number) => void;
   signal?: AbortSignal;
 }
@@ -162,7 +164,7 @@ export function explainYtdlpError(stderr: string): LinkError {
 }
 
 /** The exact yt-dlp command line. Exported so tests can check the safety flags. */
-export function buildYtdlpArgs(url: string, dir: string, o: Pick<FetchOptions, "maxMb" | "maxDurationSeconds" | "cookiesBrowser" | "audioOnly">): string[] {
+export function buildYtdlpArgs(url: string, dir: string, o: Pick<FetchOptions, "maxMb" | "maxDurationSeconds" | "cookiesBrowser" | "audioOnly" | "cookiesFile">): string[] {
   const args = [
     "--ignore-config", "--no-playlist", "--no-warnings", "--no-exec", "--no-cache-dir", "--no-mtime", "--no-part",
     "--socket-timeout", "20", "--retries", "3", "--fragment-retries", "3",
@@ -180,6 +182,7 @@ export function buildYtdlpArgs(url: string, dir: string, o: Pick<FetchOptions, "
     "--", url,
   ];
   if (o.cookiesBrowser) args.splice(args.indexOf("--"), 0, "--cookies-from-browser", o.cookiesBrowser);
+  if (o.cookiesFile) args.splice(args.indexOf("--"), 0, "--cookies", o.cookiesFile);
   return args;
 }
 
