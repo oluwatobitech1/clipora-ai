@@ -1,14 +1,14 @@
 import { useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
-import { APP_NAME, TAGLINE, TOOLS } from "@clipora/shared";
+import { TAGLINE, TOOLS } from "@clipora/shared";
 import { useAuth } from "../auth/AuthContext";
+import { useMode } from "../lib/mode";
 import { Logo } from "./Logo";
 import { ButtonLink } from "./ui";
 
 const nav = [
   { to: "/tools", label: "Tools" },
   { to: "/#features", label: "Features" },
-  { to: "/pricing", label: "Pricing" },
 ];
 
 function ScrollToHash() {
@@ -22,7 +22,9 @@ function ScrollToHash() {
 
 function Header() {
   const [open, setOpen] = useState(false);
-  const { session, signOut } = useAuth();
+  const { session, signOut, configured } = useAuth();
+  // No sign-in in local mode, while the mode is loading, or when Supabase is not set up (accounts are optional).
+  const hideAuth = useMode()?.local !== false || !configured;
   const { pathname, hash } = useLocation();
   useEffect(() => setOpen(false), [pathname, hash]);
 
@@ -35,11 +37,11 @@ function Header() {
           {nav.map((n) => (
             <NavLink key={n.to} to={n.to} className={link}>{n.label}</NavLink>
           ))}
-          {session ? (
+          {!hideAuth && (session ? (
             <button type="button" onClick={signOut} className={link}>Sign out</button>
           ) : (
             <Link to="/login" className={link}>Sign in</Link>
-          )}
+          ))}
           <ButtonLink to="/tools/video-to-audio" className="ml-2 !py-2">Upload a file</ButtonLink>
         </nav>
         <button
@@ -57,11 +59,11 @@ function Header() {
           {nav.map((n) => (
             <NavLink key={n.to} to={n.to} className={link}>{n.label}</NavLink>
           ))}
-          {session ? (
+          {!hideAuth && (session ? (
             <button type="button" onClick={signOut} className={`${link} text-left`}>Sign out</button>
           ) : (
             <Link to="/login" className={link}>Sign in</Link>
-          )}
+          ))}
           <ButtonLink to="/tools/video-to-audio" className="mt-2">Upload a file</ButtonLink>
         </nav>
       )}
@@ -87,13 +89,12 @@ function Footer() {
         </div>
         <div className={col}>
           <p className={head}>Company</p>
-          <Link to="/pricing" className="hover:text-ink">Pricing</Link>
           <Link to="/privacy" className="hover:text-ink">Privacy</Link>
           <Link to="/terms" className="hover:text-ink">Terms</Link>
         </div>
       </div>
       <p className="border-t border-line py-5 text-center text-xs text-muted">
-        {APP_NAME} is in early development. Only upload files you have the right to process.
+        Only use files you have the right to process.
       </p>
     </footer>
   );

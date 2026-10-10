@@ -14,7 +14,8 @@ export function AuthPage({ mode }: { mode: "login" | "signup" }) {
   const [checkEmail, setCheckEmail] = useState(false);
   const isLogin = mode === "login";
 
-  if (session) return <Navigate to="/tools/video-to-audio" replace />;
+  // Accounts are optional: with no Supabase set up, skip this page and go straight to the tool.
+  if (session || !configured) return <Navigate to="/tools/video-to-audio" replace />;
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
