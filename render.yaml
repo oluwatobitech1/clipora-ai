@@ -9,4 +9,4 @@ services:
       - key: LINK_SERVER
         value: "1"
       - key: CORS_ORIGIN
-        sync: false   # paste your Vercel site address, e.g. https://framevox.vercel.app
+        value: "*"    # any website may call it; each visitor is rate limited. Use your exact Vercel address to restrict.

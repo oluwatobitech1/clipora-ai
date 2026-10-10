@@ -2,8 +2,9 @@
 #   docker build -f Dockerfile.link -t framevox-links .
 FROM node:22-bookworm-slim
 RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg curl ca-certificates python3 \
-  && curl -fsSL https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp \
-  && chmod a+rx /usr/local/bin/yt-dlp && rm -rf /var/lib/apt/lists/*
+  && mkdir -p /opt/ytdlp \
+  && curl -fsSL https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /opt/ytdlp/yt-dlp \
+  && chmod a+rx /opt/ytdlp/yt-dlp && chown -R node:node /opt/ytdlp && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY package.json package-lock.json* ./
 COPY packages/shared/package.json packages/shared/
@@ -14,7 +15,7 @@ COPY packages/shared packages/shared
 COPY apps/local apps/local
 COPY apps/worker apps/worker
 USER node
-ENV LINK_SERVER=1 PORT=10000 HOME=/tmp
+ENV LINK_SERVER=1 PORT=10000 HOME=/tmp YTDLP_PATH=/opt/ytdlp/yt-dlp
 EXPOSE 10000
 # Sites change often, so update yt-dlp every time the server starts.
-CMD ["sh", "-c", "yt-dlp -U >/dev/null 2>&1 || true; exec npx tsx apps/local/src/index.ts"]
+CMD ["sh", "-c", "/opt/ytdlp/yt-dlp -U >/dev/null 2>&1 || true; exec npx tsx apps/local/src/index.ts"]

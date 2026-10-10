@@ -7,7 +7,7 @@ Push the whole `framevox` folder (the `.env` file must NOT be pushed).
 
 ## 2. Create the link server on Render (free)
 1. render.com > New > Blueprint > pick your GitHub repo. It reads `render.yaml`.
-2. When asked for `CORS_ORIGIN`, paste your website address exactly, with no trailing slash, e.g. `https://framevox.vercel.app` (several allowed, separated by commas, e.g. also your custom domain).
+2. `CORS_ORIGIN` is already set to `*` (any website). To restrict it, use your exact address(es) with no trailing slash, separated by commas; `https://*.vercel.app` is also allowed. If you set it to just one address, remember Vercel also has other addresses (deployment links), and those will be refused.
 3. Deploy. When it is live you get an address like `https://framevox-links.onrender.com`. Open `/api/health` on it: you should see `{"ok":true}`.
 
 ## 3. Tell the website where it is
