@@ -35,10 +35,10 @@ test("rejects empty and oversized files", () => {
   assert.equal(big.ok === false && big.code, "too-large");
 });
 
-test("tool ids are unique and only the two built tools are marked available", () => {
+test("tool ids are unique and only the built tools are marked available", () => {
   const ids = TOOLS.map((t) => t.id);
   assert.equal(new Set(ids).size, ids.length);
-  assert.deepEqual(TOOLS.filter((t) => t.availability === "available").map((t) => t.id), ["video-to-audio", "video-to-text"]);
+  assert.deepEqual(TOOLS.filter((t) => t.availability === "available").map((t) => t.id), ["video-to-audio", "video-to-text", "subtitles", "video-summarizer", "translate", "find-moment", "highlight-clipper", "bleep-maker", "speaking-coach"]);
 });
 
 import { buildDownloadName, isTerminalStatus, RETRYABLE_ERROR_CODES } from "./index.ts";

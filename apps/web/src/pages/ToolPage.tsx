@@ -2,7 +2,14 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { AUDIO_OUTPUT_FORMATS, TOOLS, type AudioOutputFormat } from "@clipora/shared";
 import { AudioExtractor } from "../components/AudioExtractor";
+import { BleepMaker } from "../components/BleepMaker";
+import { FindMoment } from "../components/FindMoment";
+import { HighlightClipper } from "../components/HighlightClipper";
+import { SpeakingCoach } from "../components/SpeakingCoach";
+import { SubtitleEditor } from "../components/SubtitleEditor";
+import { Summarizer } from "../components/Summarizer";
 import { Transcriber } from "../components/Transcriber";
+import { Translator } from "../components/Translator";
 import { UploadZone } from "../components/UploadZone";
 import { AvailabilityBadge, ButtonLink, Notice } from "../components/ui";
 import { clearPendingFile, peekPendingFile } from "../lib/pendingFile";
@@ -18,7 +25,22 @@ export function ToolPage() {
 
   if (!tool) return <NotFound />;
 
-  const isWorkspace = tool.id === "video-to-audio" || tool.id === "video-to-text";
+  const isWorkspace = tool.availability === "available";
+
+  function renderTool() {
+    switch (tool?.id) {
+      case "video-to-audio": return <AudioExtractor file={file} format={format} />;
+      case "video-to-text": return <Transcriber file={file} />;
+      case "subtitles": return <SubtitleEditor file={file} />;
+      case "video-summarizer": return <Summarizer file={file} />;
+      case "translate": return <Translator file={file} />;
+      case "find-moment": return <FindMoment file={file} />;
+      case "highlight-clipper": return <HighlightClipper file={file} />;
+      case "bleep-maker": return <BleepMaker file={file} />;
+      case "speaking-coach": return <SpeakingCoach file={file} />;
+      default: return null;
+    }
+  }
 
   return (
     <div className="mx-auto max-w-3xl px-5 py-16">
@@ -51,11 +73,7 @@ export function ToolPage() {
             </div>
           )}
 
-          {tool.id === "video-to-audio" ? (
-            <AudioExtractor file={file} format={format} />
-          ) : (
-            <Transcriber file={file} />
-          )}
+          {renderTool()}
         </div>
       )}
     </div>

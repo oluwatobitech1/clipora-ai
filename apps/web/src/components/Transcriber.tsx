@@ -9,6 +9,7 @@ import { api, ApiClientError } from "../lib/api";
 import { formatBytes } from "../lib/media";
 import { isAbort, startLocalJob, useMode } from "../lib/mode";
 import { uploadForProcessing } from "../lib/upload";
+import { BrowserTranscriber } from "./BrowserTranscriber";
 import { Button, Notice } from "./ui";
 
 type Phase =
@@ -178,7 +179,8 @@ export function Transcriber({ file }: { file: File | null }) {
   }
 
   if (mode === null) return <p className="text-sm text-muted">Loading.</p>;
-  if (!local && !configured) return <Notice>Video to Text needs a speech server, which is not connected to this website yet. Video to Audio works now with no sign-in.</Notice>;
+  // No Supabase configured (plain static deploy): transcribe in the visitor's browser, no account needed.
+  if (!local && !configured) return <BrowserTranscriber file={file} />;
   if (!local && loading) return <p className="text-sm text-muted">Loading.</p>;
   if (!local && !session) {
     return (
