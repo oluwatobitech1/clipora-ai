@@ -12,7 +12,7 @@ const f = (name: string) => join(dir, name);
 const ff = (...args: string[]) => execFileSync("ffmpeg", ["-v", "error", "-y", ...args]);
 
 before(() => {
-  dir = mkdtempSync(join(tmpdir(), "clipora-test-"));
+  dir = mkdtempSync(join(tmpdir(), "framevox-test-"));
   // 3 s video with a 440 Hz tone
   ff("-f", "lavfi", "-i", "testsrc=duration=3:size=320x240:rate=15", "-f", "lavfi", "-i", "sine=frequency=440:duration=3",
      "-c:v", "mpeg4", "-c:a", "aac", "-shortest", f("with-audio.mp4"));

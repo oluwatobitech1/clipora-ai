@@ -1,4 +1,4 @@
--- Clipora AI, Milestone 2: core schema.
+-- Framevox, Milestone 2: core schema.
 -- Run in the Supabase dashboard (SQL Editor) or with the Supabase CLI (`supabase db push`).
 -- Clients never write to these tables. Only the API (service role key) does,
 -- always after checking ownership. RLS is a second layer of defence.

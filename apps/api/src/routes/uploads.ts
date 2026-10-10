@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { MEDIA_BUCKET, validateMediaFile, type AuthorizeUploadResponse } from "@clipora/shared";
+import { MEDIA_BUCKET, validateMediaFile, type AuthorizeUploadResponse } from "@framevox/shared";
 import { requireUser } from "../auth.ts";
 import { db } from "../clients.ts";
 import { config } from "../config.ts";

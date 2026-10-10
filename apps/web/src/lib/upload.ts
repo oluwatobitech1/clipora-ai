@@ -1,4 +1,4 @@
-import type { AuthorizeUploadResponse } from "@clipora/shared";
+import type { AuthorizeUploadResponse } from "@framevox/shared";
 import { api } from "./api";
 import { supabase } from "./supabase";
 

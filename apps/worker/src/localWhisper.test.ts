@@ -11,7 +11,7 @@ import { decodeToFloat32, LocalWhisperProvider, toSegments } from "./localWhispe
 
 let dir: string;
 before(() => {
-  dir = mkdtempSync(join(tmpdir(), "clipora-lw-"));
+  dir = mkdtempSync(join(tmpdir(), "framevox-lw-"));
   execFileSync("ffmpeg", ["-v", "error", "-y", "-f", "lavfi", "-i", "sine=frequency=440:duration=3", join(dir, "tone.mp3")]);
 });
 after(() => rmSync(dir, { recursive: true, force: true }));

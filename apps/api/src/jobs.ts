@@ -1,4 +1,4 @@
-import { MEDIA_BUCKET, type JobDto, type TaskType } from "@clipora/shared";
+import { MEDIA_BUCKET, type JobDto, type TaskType } from "@framevox/shared";
 import { db } from "./clients.ts";
 import { config } from "./config.ts";
 import { toJobDto, type JobRow } from "./dto.ts";

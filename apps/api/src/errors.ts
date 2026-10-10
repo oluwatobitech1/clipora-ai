@@ -1,4 +1,4 @@
-import type { ErrorCode } from "@clipora/shared";
+import type { ErrorCode } from "@framevox/shared";
 
 /** An error whose message is safe to send to the browser. */
 export class ApiError extends Error {

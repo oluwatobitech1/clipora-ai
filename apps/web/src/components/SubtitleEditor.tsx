@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { buildTranscriptName, formatSrt, formatVtt } from "@clipora/shared";
+import { buildTranscriptName, formatSrt, formatVtt } from "@framevox/shared";
 import { formatBytes } from "../lib/media";
 import { useBrowserTranscription } from "../lib/useBrowserTranscription";
 import { Button, Notice } from "./ui";

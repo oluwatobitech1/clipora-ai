@@ -9,7 +9,7 @@
 import { execFile, spawn } from "node:child_process";
 import { readdir, stat } from "node:fs/promises";
 import { join } from "node:path";
-import type { AudioOutputFormat } from "@clipora/shared";
+import type { AudioOutputFormat } from "@framevox/shared";
 
 export type MediaErrorCode =
   | "file_too_large"

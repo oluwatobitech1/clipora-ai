@@ -6,7 +6,7 @@
  * The library is loaded lazily, so servers that never transcribe locally do not pay for it.
  */
 import { spawn } from "node:child_process";
-import type { TranscriptSegment } from "@clipora/shared";
+import type { TranscriptSegment } from "@framevox/shared";
 import { MediaError } from "./ffmpeg.ts";
 import type { ProviderResult, TranscriptionProvider } from "./transcribe.ts";
 

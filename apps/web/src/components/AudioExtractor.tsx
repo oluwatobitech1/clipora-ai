@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { isTerminalStatus, type AudioOutputFormat, type AuthorizeUploadResponse, type JobDto } from "@clipora/shared";
+import { isTerminalStatus, type AudioOutputFormat, type AuthorizeUploadResponse, type JobDto } from "@framevox/shared";
 import { useAuth } from "../auth/AuthContext";
 import { api, ApiClientError } from "../lib/api";
 import { formatBytes } from "../lib/media";
@@ -167,7 +167,7 @@ export function AudioExtractor({ file, format }: { file: File | null; format: Au
         {!file && <p className="mt-3 text-sm text-muted">Choose a file first.</p>}
         {file && phase.kind === "idle" && (
           <p className="mt-3 text-sm text-muted">
-            Clicking this {local ? `sends ${file.name} (${formatBytes(file.size)}) to the Clipora server running on this computer. Nothing leaves your machine.` : `uploads ${file.name} (${formatBytes(file.size)}) to your private storage. It is deleted after 24 hours.`}
+            Clicking this {local ? `sends ${file.name} (${formatBytes(file.size)}) to the Framevox server running on this computer. Nothing leaves your machine.` : `uploads ${file.name} (${formatBytes(file.size)}) to your private storage. It is deleted after 24 hours.`}
           </p>
         )}
       </div>

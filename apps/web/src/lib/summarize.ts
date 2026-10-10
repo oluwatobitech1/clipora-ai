@@ -14,7 +14,7 @@ const TARGET: Record<SummaryLength, number> = { short: 3, medium: 5, long: 8 };
 export function splitSentences(text: string): string[] {
   const clean = text.replace(/\s+/g, " ").trim();
   if (!clean) return [];
-  let parts = clean.split(/(?<=[.!?…])\s+(?=[\p{Lu}"'(\[\d])/u).map((s) => s.trim()).filter(Boolean);
+  let parts = clean.split(/(?<=[.!?…])\s+(?=[\p{Lu}"'([\d])/u).map((s) => s.trim()).filter(Boolean);
   // Speech-to-text sometimes has no punctuation: fall back to chunks of about 25 words.
   if (parts.length < 3 && clean.split(" ").length > 60) {
     const words = clean.split(" ");

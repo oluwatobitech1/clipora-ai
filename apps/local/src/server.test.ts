@@ -40,7 +40,7 @@ async function finish(url: string, id: string) {
 }
 
 before(async () => {
-  dir = mkdtempSync(join(tmpdir(), "clipora-lt-"));
+  dir = mkdtempSync(join(tmpdir(), "framevox-lt-"));
   execFileSync("ffmpeg", ["-v", "error", "-y", "-f", "lavfi", "-i", "testsrc=duration=3:size=160x120:rate=10", "-f", "lavfi", "-i", "sine=frequency=440:duration=3", "-c:v", "mpeg4", "-c:a", "aac", "-shortest", join(dir, "a.mp4")]);
   const a = await start({ provider: stubProvider });
   base = a.url; stop = a.close; root = a.root;

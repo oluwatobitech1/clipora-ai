@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import type { TranscriptSegment } from "@clipora/shared";
+import type { TranscriptSegment } from "@framevox/shared";
 import { getFfmpeg, resetFfmpeg } from "./browserFfmpeg";
 
 export const MAX_BROWSER_MB = 300;

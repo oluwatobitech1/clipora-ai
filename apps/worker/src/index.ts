@@ -1,4 +1,4 @@
-import { JOB_ATTEMPTS } from "@clipora/shared";
+import { JOB_ATTEMPTS } from "@framevox/shared";
 import { cleanupExpired } from "./cleanup.ts";
 import { config } from "./config.ts";
 import { db, type JobRow } from "./db.ts";

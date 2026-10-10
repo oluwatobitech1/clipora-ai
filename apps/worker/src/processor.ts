@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { Readable, Transform } from "node:stream";
 import type { ReadableStream as WebReadableStream } from "node:stream/web";
 import { pipeline } from "node:stream/promises";
-import { audioContentType, buildDownloadName, JOB_ATTEMPTS, type AudioOutputFormat } from "@clipora/shared";
+import { audioContentType, buildDownloadName, JOB_ATTEMPTS, type AudioOutputFormat } from "@framevox/shared";
 import { config } from "./config.ts";
 import { db, type JobRow, type MediaRow } from "./db.ts";
 import { assertProcessable, extractAudio, extractSpeechChunks, MediaError, probeMedia, validateOutput } from "./ffmpeg.ts";
@@ -41,7 +41,7 @@ async function downloadTo(url: string, dest: string, maxBytes: number): Promise<
  */
 export async function processJob(job: JobRow): Promise<void> {
   const jobId = job.id;
-  const workdir = await mkdtemp(join(tmpdir(), "clipora-"));
+  const workdir = await mkdtemp(join(tmpdir(), "framevox-"));
   try {
     const { data: mediaData } = job.media_file_id
       ? await db.from("media_files").select("id, bucket, storage_key, original_name").eq("id", job.media_file_id).maybeSingle()

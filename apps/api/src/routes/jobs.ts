@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { AUDIO_OUTPUT_FORMATS, RETRYABLE_ERROR_CODES, type JobDto, type TranscriptDto, type TranscriptSegment } from "@clipora/shared";
+import { AUDIO_OUTPUT_FORMATS, RETRYABLE_ERROR_CODES, type JobDto, type TranscriptDto, type TranscriptSegment } from "@framevox/shared";
 import { requireUser } from "../auth.ts";
 import { db } from "../clients.ts";
 import { toJobDto, type ExportRow, type JobRow } from "../dto.ts";

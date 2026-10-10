@@ -16,7 +16,7 @@ import Fastify from "fastify";
 import {
   AUDIO_OUTPUT_FORMATS, audioContentType, buildDownloadName, validateMediaFile,
   type AudioOutputFormat, type ErrorCode, type JobDto, type TaskType, type TranscriptDto,
-} from "@clipora/shared";
+} from "@framevox/shared";
 import { assertProcessable, extractAudio, extractSpeechChunks, MediaError, probeMedia, validateOutput } from "../../worker/src/ffmpeg.ts";
 import { LocalWhisperProvider } from "../../worker/src/localWhisper.ts";
 import { mergeChunks, OpenAIProvider, type ProviderResult, type TranscriptionProvider } from "../../worker/src/transcribe.ts";
@@ -71,7 +71,7 @@ export async function buildLocalApp(config: LocalConfig) {
   const app = Fastify({ logger: { level: "info" }, bodyLimit: 1024 * 1024 });
   await app.register(multipart, { limits: { fileSize: config.maxUploadMb * 1024 * 1024, files: 1, fields: 10 } });
 
-  const root = await mkdtemp(join(tmpdir(), "clipora-local-"));
+  const root = await mkdtemp(join(tmpdir(), "framevox-local-"));
   const jobs = new Map<string, Job>();
   let running = 0;
   const waiting: (() => void)[] = [];

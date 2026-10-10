@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { buildDownloadName, type AudioOutputFormat } from "@clipora/shared";
+import { buildDownloadName, type AudioOutputFormat } from "@framevox/shared";
 import { formatBytes } from "../lib/media";
 import { Button, Notice } from "./ui";
 

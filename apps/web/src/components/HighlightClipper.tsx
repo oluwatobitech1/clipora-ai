@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { TranscriptSegment } from "@clipora/shared";
+import type { TranscriptSegment } from "@framevox/shared";
 import { getFfmpeg, resetFfmpeg } from "../lib/browserFfmpeg";
 import { formatBytes } from "../lib/media";
 import { scoreUnits } from "../lib/summarize";

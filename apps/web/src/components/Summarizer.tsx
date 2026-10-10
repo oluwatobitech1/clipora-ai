@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { buildTranscriptName } from "@clipora/shared";
+import { buildTranscriptName } from "@framevox/shared";
 import { formatBytes } from "../lib/media";
 import { summarize, type SummaryLength } from "../lib/summarize";
 import { useBrowserTranscription } from "../lib/useBrowserTranscription";

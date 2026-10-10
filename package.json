@@ -1,5 +1,5 @@
 {
-  "name": "clipora-ai",
+  "name": "framevox",
   "private": true,
   "version": "0.1.0",
   "workspaces": [
@@ -11,15 +11,15 @@
   },
   "scripts": {
     "dev": "concurrently -k -n local,web -c blue,magenta \"npm:dev:local-api\" \"npm:dev:web\"",
-    "dev:web": "npm run dev -w @clipora/web",
-    "dev:api": "npm run dev -w @clipora/api",
-    "dev:worker": "npm run dev -w @clipora/worker",
-    "build": "npm run build -w @clipora/web",
+    "dev:web": "npm run dev -w @framevox/web",
+    "dev:api": "npm run dev -w @framevox/api",
+    "dev:worker": "npm run dev -w @framevox/worker",
+    "build": "npm run build -w @framevox/web",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
     "dev:local": "concurrently -k -n local,web -c blue,magenta \"npm:dev:local-api\" \"npm:dev:web\"",
-    "dev:local-api": "npm run dev -w @clipora/local",
+    "dev:local-api": "npm run dev -w @framevox/local",
     "dev:cloud": "concurrently -k -n api,worker,web -c blue,green,magenta \"npm:dev:api\" \"npm:dev:worker\" \"npm:dev:web\"",
     "start": "concurrently -k -n local,web -c blue,magenta \"npm:dev:local-api\" \"npm:dev:web\""
   },

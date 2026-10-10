@@ -1,4 +1,4 @@
--- Clipora AI, Milestone 3: speech transcription + M4A output.
+-- Framevox, Milestone 3: speech transcription + M4A output.
 -- Run in the Supabase SQL Editor AFTER 0001_m2_core.sql.
 
 -- Allow the new job type.

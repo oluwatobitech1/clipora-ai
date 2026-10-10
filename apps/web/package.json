@@ -1,5 +1,5 @@
 {
-  "name": "@clipora/web",
+  "name": "@framevox/web",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -11,10 +11,11 @@
     "lint": "eslint ."
   },
   "dependencies": {
-    "@clipora/shared": "*",
     "@ffmpeg/ffmpeg": "^0.12.15",
     "@ffmpeg/util": "^0.12.2",
     "@fontsource-variable/inter": "^5.0.0",
+    "@fontsource-variable/plus-jakarta-sans": "^5.3.0",
+    "@framevox/shared": "*",
     "@huggingface/transformers": "^3.7.6",
     "@supabase/supabase-js": "^2.45.0",
     "react": "^19.0.0",

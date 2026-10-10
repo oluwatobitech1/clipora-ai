@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Framevox: every video has more to give</title>
+<style>
+  :root{--ink:#0f1535;--muted:#566079;--line:#e3e6f2;--surface:#f6f7fc;--b50:#f3f1ff;--b200:#d3cbff;--b500:#6c5cf4;--b600:#5b46e8;--b700:#4a37cc;--danger:#b3261e}
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;color:var(--ink);background:#fff;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.55;-webkit-font-smoothing:antialiased}
+  a{color:inherit;text-decoration:none}
+  :where(a,button,input,summary):focus-visible{outline:3px solid var(--b500);outline-offset:2px;border-radius:8px}
+  .wrap{max-width:72rem;margin:0 auto;padding:0 1.25rem}
+  .skip{position:absolute;left:-999px}.skip:focus{left:12px;top:12px;background:#fff;padding:8px 14px;border-radius:8px;z-index:50;font-weight:600}
+
+  header{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+  .bar{display:flex;align-items:center;justify-content:space-between;height:4rem}
+  .logo{display:flex;align-items:center;gap:.6rem;font-weight:700;font-size:1.125rem}
+  nav.main{display:flex;align-items:center;gap:.25rem}
+  nav.main a,nav.main button.link{padding:.5rem .75rem;border-radius:8px;font-size:.875rem;font-weight:600;color:var(--muted);background:none;border:0;cursor:pointer;font-family:inherit}
+  nav.main a:hover,nav.main button.link:hover{color:var(--ink)}
+  .btn{display:inline-flex;align-items:center;justify-content:center;padding:.75rem 1.25rem;border-radius:12px;font:600 .875rem inherit;font-family:inherit;border:1px solid transparent;cursor:pointer;transition:background .15s,border-color .15s}
+  .btn-p{background:var(--b600);color:#fff}.btn-p:hover{background:var(--b700)}
+  .btn-s{background:#fff;border-color:var(--line);color:var(--ink)}.btn-s:hover{border-color:var(--b500);color:var(--b700)}
+  .menu-btn{display:none;background:none;border:0;font:600 .875rem inherit;font-family:inherit;padding:.5rem .75rem;cursor:pointer;border-radius:8px}
+  @media(max-width:760px){
+    nav.main{display:none;position:absolute;top:4rem;left:0;right:0;background:#fff;border-bottom:1px solid var(--line);flex-direction:column;align-items:stretch;padding:.75rem 1.25rem}
+    nav.main.open{display:flex}.menu-btn{display:block}
+  }
+
+  .hero{background:linear-gradient(#f3f1ff,#fff);text-align:center;padding:5rem 0 4.5rem}
+  h1{margin:0;font-size:clamp(2.2rem,6vw,3.75rem);line-height:1.08;font-weight:800;letter-spacing:-.025em}
+  .lede{max-width:36rem;margin:1.25rem auto 0;color:var(--muted);font-size:1.125rem}
+  .upload{max-width:36rem;margin:2.5rem auto 0;text-align:left}
+  .drop{display:flex;flex-direction:column;align-items:center;gap:.25rem;padding:2.5rem 1.5rem;border:2px dashed var(--b200);border-radius:1rem;background:#fff;cursor:pointer;text-align:center;transition:.15s}
+  .drop:hover,.drop.over{border-color:var(--b600);background:var(--b50)}
+  .drop strong{font-size:1.125rem;margin-top:.5rem}.drop span{font-size:.875rem;color:var(--muted)}
+  input[type=file]{position:absolute;width:1px;height:1px;opacity:0}
+  input[type=file]:focus-visible + .drop{outline:3px solid var(--b500);outline-offset:2px}
+  .err{margin:.75rem 0 0;color:var(--danger);font-weight:600;font-size:.875rem}
+  .file{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:1rem;border:1px solid var(--line);border-radius:1rem;background:#fff}
+  .file p{margin:0}.file .name{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:22rem}.file .meta{font-size:.875rem;color:var(--muted)}
+  .linkbtn{background:none;border:0;color:var(--b700);font:600 .875rem inherit;font-family:inherit;cursor:pointer;padding:.5rem .75rem;border-radius:8px}.linkbtn:hover{background:var(--b50)}
+  .row{display:flex;flex-wrap:wrap;gap:.75rem;margin-top:1rem}
+  .small{margin:1rem 0 0;font-size:.875rem;color:var(--muted)}
+  [hidden]{display:none!important}
+
+  section{padding:5rem 0}
+  section.alt{background:var(--surface)}
+  h2{margin:0;font-size:1.9rem;letter-spacing:-.015em}
+  .sub{margin:.75rem 0 0;color:var(--muted);max-width:40rem}
+  .grid{display:grid;gap:1.25rem;margin-top:2.5rem;grid-template-columns:repeat(auto-fit,minmax(15rem,1fr))}
+  .card{background:#fff;border:1px solid var(--line);border-radius:1.25rem;padding:1.5rem}
+  a.card:hover{border-color:var(--b500)}
+  .card h3{margin:.75rem 0 .25rem;font-size:1.0625rem}.card p{margin:0;font-size:.875rem;color:var(--muted)}
+  .badge{display:inline-block;padding:.25rem .65rem;border-radius:999px;font-size:.75rem;font-weight:600;background:var(--b50);color:var(--b700)}
+  .badge.planned{background:var(--surface);color:var(--muted)}
+  .step{width:2.25rem;height:2.25rem;border-radius:50%;background:var(--b600);color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;font-size:.875rem}
+  .alt .card{border:0}
+  details{padding:1rem 0;border-bottom:1px solid var(--line)}details:first-of-type{border-top:1px solid var(--line)}
+  summary{cursor:pointer;font-weight:600;list-style:none}summary::-webkit-details-marker{display:none}
+  details p{margin:.5rem 0 0;color:var(--muted);max-width:40rem}
+  footer{background:var(--surface);border-top:1px solid var(--line);padding:3rem 0 1.5rem;font-size:.875rem;color:var(--muted)}
+  .fgrid{display:grid;gap:2rem;grid-template-columns:2fr 1fr 1fr}
+  @media(max-width:700px){.fgrid{grid-template-columns:1fr}}
+  footer b{display:block;color:var(--ink);margin-bottom:.5rem}footer a,footer button{display:block;margin:.35rem 0;color:var(--muted);background:none;border:0;padding:0;font:inherit;cursor:pointer}footer a:hover,footer button:hover{color:var(--ink)}
+  .note{margin-top:2rem;padding-top:1.25rem;border-top:1px solid var(--line);text-align:center;font-size:.75rem}
+  .toast{position:fixed;left:50%;bottom:1.5rem;transform:translateX(-50%);max-width:30rem;width:calc(100% - 2rem);background:var(--ink);color:#fff;padding:.9rem 1.1rem;border-radius:12px;font-size:.875rem;z-index:60;box-shadow:0 10px 30px rgba(15,21,53,.3)}
+  @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important}}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header>
+  <div class="wrap bar">
+    <a class="logo" href="#top" aria-label="Framevox home">
+      <svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#5b46e8"/><path d="M9 20v-8M13.5 23V9M18.5 21V11M23 18v-4" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/></svg>
+      Framevox
+    </a>
+    <button class="menu-btn" id="menuBtn" aria-expanded="false" aria-controls="nav">Menu</button>
+    <nav class="main" id="nav" aria-label="Main">
+      <a href="#tools">Tools</a>
+      <a href="#features">Features</a>
+      <a href="#pricing">Pricing</a>
+      <button class="link" data-planned="Sign in arrives in Milestone 4 (accounts and private projects).">Sign in</button>
+      <a class="btn btn-p" href="#top" style="margin-left:.5rem;padding:.5rem 1rem;color:#fff">Upload a file</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+  <section class="hero" id="top" style="padding-top:5rem">
+    <div class="wrap">
+      <h1>Turn any video into something more.</h1>
+      <p class="lede">Extract audio, transcribe speech, create subtitles, and turn recordings into useful insights, all in one workspace.</p>
+
+      <div class="upload">
+        <div id="pick">
+          <input type="file" id="file" accept=".mp4,.mov,.mp3,.wav,.m4a" aria-describedby="hint">
+          <label class="drop" id="drop" for="file">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#5b46e8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
+            <strong>Drop a file here, or browse</strong>
+            <span id="hint">MP4, MOV, MP3, WAV, M4A. Up to 500 MB.</span>
+          </label>
+          <p class="err" id="err" role="alert" hidden></p>
+        </div>
+        <div id="chosen" hidden>
+          <div class="file">
+            <div><p class="name" id="fname"></p><p class="meta" id="fmeta"></p></div>
+            <button class="linkbtn" id="clear" type="button">Choose a different file</button>
+          </div>
+          <div class="row">
+            <button class="btn btn-p" type="button" data-planned="Real audio extraction arrives in Milestone 2. Nothing was uploaded: your file stayed in your browser.">Extract audio</button>
+            <button class="btn btn-s" type="button" data-planned="Real transcription arrives in Milestone 3. Nothing was uploaded: your file stayed in your browser.">Transcribe</button>
+          </div>
+        </div>
+        <p class="small">Use only files you are allowed to process. Processing is still being built, so nothing is uploaded yet.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="tools"><div class="wrap">
+    <h2 id="features">One workspace, several tools</h2>
+    <p class="sub">Each tool shows its real status, so you always know what works today.</p>
+    <div class="grid">
+      <a class="card" href="#top" data-planned="Video to Audio is in development. Target: Milestone 2."><span class="badge">In development</span><h3>Video to Audio</h3><p>Extract the sound from a video as MP3 or WAV.</p></a>
+      <a class="card" href="#top" data-planned="Video to Text is in development. Target: Milestone 3."><span class="badge">In development</span><h3>Video to Text</h3><p>Transcribe speech from a video or audio file, with timestamps where available.</p></a>
+      <a class="card" href="#top" data-planned="Subtitles are planned for Milestone 5."><span class="badge planned">Planned</span><h3>Subtitles</h3><p>Generate and edit subtitles, then export SRT and VTT.</p></a>
+      <a class="card" href="#top" data-planned="Video Summarizer is planned for Milestone 5."><span class="badge planned">Planned</span><h3>Video Summarizer</h3><p>Summaries and key takeaways based on the actual transcript.</p></a>
+      <a class="card" href="#top" data-planned="Translator is planned for Milestone 5."><span class="badge planned">Planned</span><h3>Translator</h3><p>Translate a transcript into another language, keeping the original unchanged.</p></a>
+    </div>
+  </div></section>
+
+  <section class="alt"><div class="wrap">
+    <h2>How it works</h2>
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(14rem,1fr))">
+      <div class="card"><div class="step">1</div><h3>Add a file</h3><p>Choose a video or audio recording you have the right to use.</p></div>
+      <div class="card"><div class="step">2</div><h3>Pick a task</h3><p>Extract the audio, or turn the speech into text.</p></div>
+      <div class="card"><div class="step">3</div><h3>Review and export</h3><p>Read the result, copy it, or download it in a supported format.</p></div>
+    </div>
+  </div></section>
+
+  <section><div class="wrap">
+    <h2>Built for people who work with recordings</h2>
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(13rem,1fr))">
+      <div class="card"><h3 style="margin-top:0">Creators</h3><p>Captions, transcripts and repurposed content from your own videos.</p></div>
+      <div class="card"><h3 style="margin-top:0">Students and educators</h3><p>Lecture transcripts as the base for notes and revision.</p></div>
+      <div class="card"><h3 style="margin-top:0">Teams</h3><p>Searchable text from meetings, interviews and training sessions.</p></div>
+      <div class="card"><h3 style="margin-top:0">Podcasters and researchers</h3><p>Accurate-enough drafts to edit, quote and reference.</p></div>
+    </div>
+  </div></section>
+
+  <section class="alt" id="pricing"><div class="wrap">
+    <h2>Pricing</h2>
+    <p class="sub">Plans and limits are not set yet. They will be published after processing costs are measured, with no unlimited promises.</p>
+  </div></section>
+
+  <section><div class="wrap" style="max-width:48rem">
+    <h2>Questions</h2>
+    <div style="margin-top:2rem">
+      <details><summary>Is my file uploaded right now?</summary><p>No. Today the site only checks the file in your browser. Real uploads and processing start in Milestone 2, and this page will say so when they do.</p></details>
+      <details><summary>Which formats can I use?</summary><p>MP4, MOV, MP3, WAV, M4A, up to 500 MB. Each format is confirmed against the real processing pipeline before it is promised.</p></details>
+      <details><summary>Will transcripts be perfectly accurate?</summary><p>No. Speech-to-text can make mistakes, especially with background noise, accents, overlapping speakers and technical terms. Always review important transcripts.</p></details>
+      <details><summary>Can I use a link from another video site?</summary><p>No. Framevox only works on files you upload and are authorized to process. It does not download content from third-party platforms.</p></details>
+      <details><summary>How are my files and transcripts handled?</summary><p>The plan is private storage, owner-only access and deletion on request. The privacy policy will describe retention and third-party AI processing in detail before public launch.</p></details>
+    </div>
+  </div></section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="fgrid">
+      <div><div class="logo" style="color:var(--ink)">Framevox</div><p style="max-width:16rem">Every video has more to give.</p></div>
+      <div><b>Tools</b><a href="#tools">Video to Audio</a><a href="#tools">Video to Text</a><a href="#tools">Subtitles</a></div>
+      <div><b>Company</b><a href="#pricing">Pricing</a><button type="button" data-planned="The privacy policy will be written and reviewed before public launch.">Privacy</button><button type="button" data-planned="Terms of service will be written and reviewed before public launch.">Terms</button></div>
+    </div>
+    <p class="note">Framevox is in early development. Only upload files you have the right to process.</p>
+  </div>
+</footer>
+
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script>
+  // Same rules as packages/shared/src/index.ts
+  const MAX_MB = 500, VIDEO = [".mp4", ".mov"], AUDIO = [".mp3", ".wav", ".m4a"];
+  const $ = (id) => document.getElementById(id);
+  let toastTimer;
+
+  function toast(msg){
+    const t = $("toast"); t.textContent = msg; t.hidden = false;
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => t.hidden = true, 5000);
+  }
+  document.addEventListener("click", (e) => {
+    const el = e.target.closest("[data-planned]");
+    if (el) { if (el.tagName === "A") e.preventDefault(); toast(el.dataset.planned); }
+  });
+
+  $("menuBtn").addEventListener("click", () => {
+    const open = $("nav").classList.toggle("open");
+    $("menuBtn").setAttribute("aria-expanded", open);
+    $("menuBtn").textContent = open ? "Close menu" : "Menu";
+  });
+  $("nav").addEventListener("click", (e) => { if (e.target.closest("a")) $("nav").classList.remove("open"); });
+
+  function validate(f){
+    const ext = f.name.includes(".") ? f.name.slice(f.name.lastIndexOf(".")).toLowerCase() : "";
+    const isV = VIDEO.includes(ext), isA = AUDIO.includes(ext);
+    if (!isV && !isA) return { error: "This file type is not supported. Use MP4, MOV, MP3, WAV, M4A." };
+    if (f.type && !f.type.startsWith("video/") && !f.type.startsWith("audio/")) return { error: "This file does not look like a video or audio file." };
+    if (f.size <= 0) return { error: "This file is empty." };
+    if (f.size > MAX_MB * 1048576) return { error: "This file is larger than the " + MAX_MB + " MB limit." };
+    return { kind: isV ? "video" : "audio" };
+  }
+  const size = (b) => b >= 1048576 ? (b / 1048576).toFixed(1) + " MB" : Math.max(1, Math.round(b / 1024)) + " KB";
+  const dur = (s) => { s = Math.round(s); const m = Math.floor(s / 60); return m + ":" + String(s % 60).padStart(2, "0"); };
+
+  function accept(f){
+    if (!f) return;
+    const r = validate(f);
+    if (r.error) { $("err").textContent = r.error; $("err").hidden = false; return; }
+    $("err").hidden = true;
+    $("fname").textContent = f.name; $("fname").title = f.name;
+    $("fmeta").textContent = size(f.size);
+    $("pick").hidden = true; $("chosen").hidden = false;
+    // Real duration from the file's own metadata
+    const url = URL.createObjectURL(f), el = document.createElement(r.kind);
+    el.preload = "metadata";
+    el.onloadedmetadata = () => { if (isFinite(el.duration)) $("fmeta").textContent = size(f.size) + ", " + dur(el.duration) + " long"; URL.revokeObjectURL(url); };
+    el.onerror = () => URL.revokeObjectURL(url);
+    el.src = url;
+  }
+  $("file").addEventListener("change", (e) => { accept(e.target.files[0]); e.target.value = ""; });
+  $("clear").addEventListener("click", () => { $("chosen").hidden = true; $("pick").hidden = false; });
+  const drop = $("drop");
+  drop.addEventListener("dragover", (e) => { e.preventDefault(); drop.classList.add("over"); });
+  drop.addEventListener("dragleave", () => drop.classList.remove("over"));
+  drop.addEventListener("drop", (e) => { e.preventDefault(); drop.classList.remove("over"); accept(e.dataTransfer.files[0]); });
+</script>
+</body>
+</html>

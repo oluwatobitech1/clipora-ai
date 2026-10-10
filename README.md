@@ -1,4 +1,4 @@
-# Clipora AI
+# Framevox
 
 Extract audio from video (MP3, WAV or M4A) with real FFmpeg processing, and transcribe speech to text (TXT, SRT, VTT). Inputs: MP4, MOV, WebM, MKV, MP3, WAV, M4A.
 

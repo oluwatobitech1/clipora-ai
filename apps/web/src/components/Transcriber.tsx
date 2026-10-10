@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import {
   buildTranscriptName, formatSrt, formatTimestamp, formatVtt, isTerminalStatus,
   type JobDto, type TranscriptDto,
-} from "@clipora/shared";
+} from "@framevox/shared";
 import { useAuth } from "../auth/AuthContext";
 import { api, ApiClientError } from "../lib/api";
 import { formatBytes } from "../lib/media";
@@ -212,7 +212,7 @@ export function Transcriber({ file }: { file: File | null }) {
         {!file && <p className="mt-3 text-sm text-muted">Choose a file first.</p>}
         {file && phase.kind === "idle" && (
           <p className="mt-3 text-sm text-muted">
-            {local ? `Clicking this sends ${file.name} (${formatBytes(file.size)}) to the Clipora server on this computer, which sends only its audio to the speech-to-text provider.` : `Clicking this uploads ${file.name} (${formatBytes(file.size)}) to your private storage and sends its audio to our speech-to-text provider. Everything is deleted after 24 hours.`}
+            {local ? `Clicking this sends ${file.name} (${formatBytes(file.size)}) to the Framevox server on this computer, which sends only its audio to the speech-to-text provider.` : `Clicking this uploads ${file.name} (${formatBytes(file.size)}) to your private storage and sends its audio to our speech-to-text provider. Everything is deleted after 24 hours.`}
           </p>
         )}
       </div>

@@ -11,7 +11,13 @@ try {
 const config = configFromEnv();
 const { app } = await buildLocalApp(config);
 await app.listen({ port: config.port, host: "127.0.0.1" });
-app.log.info(`Clipora local mode ready. Transcription ${config.openaiApiKey ? "enabled" : "OFF (no OPENAI_API_KEY)"}.`);
+const usesOpenAI = config.engine === "openai" || (config.engine === "auto" && !!config.openaiApiKey);
+const engineLabel = usesOpenAI
+  ? config.openaiApiKey
+    ? "enabled (OpenAI cloud)"
+    : "OFF (TRANSCRIBE_ENGINE=openai but OPENAI_API_KEY is missing)"
+  : "enabled (free local Whisper)";
+app.log.info(`Framevox local mode ready. Transcription ${engineLabel}.`);
 
 for (const signal of ["SIGINT", "SIGTERM"] as const) {
   process.on(signal, async () => {

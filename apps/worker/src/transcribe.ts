@@ -4,7 +4,7 @@
  * Nothing here invents text: if the provider returns nothing, the caller gets an empty result and fails the job.
  */
 import { readFile } from "node:fs/promises";
-import type { TranscriptSegment } from "@clipora/shared";
+import type { TranscriptSegment } from "@framevox/shared";
 import { MediaError } from "./ffmpeg.ts";
 
 export interface ProviderResult {

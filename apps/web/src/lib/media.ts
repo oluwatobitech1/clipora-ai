@@ -1,4 +1,4 @@
-import type { MediaKind } from "@clipora/shared";
+import type { MediaKind } from "@framevox/shared";
 
 export function formatBytes(bytes: number): string {
   if (bytes >= 1024 * 1024 * 1024) return `${(bytes / 1024 ** 3).toFixed(2)} GB`;

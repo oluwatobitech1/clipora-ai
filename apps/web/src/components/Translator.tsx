@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { buildTranscriptName, formatSrt, formatVtt, type TranscriptSegment } from "@clipora/shared";
+import { buildTranscriptName, formatSrt, formatVtt, type TranscriptSegment } from "@framevox/shared";
 import { formatBytes } from "../lib/media";
 import { splitSentences } from "../lib/summarize";
 import { useBrowserTranscription } from "../lib/useBrowserTranscription";

@@ -14,7 +14,7 @@ function Page({ title, children }: { title: string; children: ReactNode }) {
 export function Privacy() {
   return (
     <Page title="Privacy">
-      <p>Clipora runs on the computer where it is installed. The file you choose is sent only to the Clipora server on that same computer, where FFmpeg extracts the audio.</p>
+      <p>Framevox runs on the computer where it is installed. The file you choose is sent only to the Framevox server on that same computer, where FFmpeg extracts the audio.</p>
       <p>Files and results are kept in a temporary folder and are removed automatically after a short time (2 hours by default), or immediately when you click Delete or Cancel.</p>
       <p>When you click Transcribe, only the extracted audio (not the video) is sent to the speech-to-text provider configured by whoever runs the server (OpenAI by default), using their API key. That provider handles the audio under its own terms. Nothing is sent to any provider when you extract audio.</p>
       <p>There are no accounts, no tracking and no ads in this version.</p>
@@ -25,7 +25,7 @@ export function Privacy() {
 export function Terms() {
   return (
     <Page title="Terms of use">
-      <p>Use Clipora only with recordings you own or have permission to process, and follow the laws that apply to you.</p>
+      <p>Use Framevox only with recordings you own or have permission to process, and follow the laws that apply to you.</p>
       <p>Transcripts are produced by an automatic speech-recognition service and can contain mistakes. Check important text against the original recording.</p>
       <p>The tool is provided as it is, without warranties. Keep your own copy of anything you cannot afford to lose, because results are deleted automatically.</p>
     </Page>
@@ -35,8 +35,8 @@ export function Terms() {
 export function Pricing() {
   return (
     <Page title="Pricing">
-      <p>This version of Clipora is free to run on your own computer. Audio extraction has no cost and needs no account.</p>
-      <p>Transcription uses your own speech-to-text API key, so the provider bills you directly for the minutes of audio you transcribe. Clipora adds no charge.</p>
+      <p>This version of Framevox is free to run on your own computer. Audio extraction has no cost and needs no account.</p>
+      <p>Transcription uses your own speech-to-text API key, so the provider bills you directly for the minutes of audio you transcribe. Framevox adds no charge.</p>
     </Page>
   );
 }

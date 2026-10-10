@@ -1,6 +1,6 @@
 /** Shared constants, types and pure helpers used by the web app, API and worker. */
 
-export const APP_NAME = "Clipora AI";
+export const APP_NAME = "Framevox";
 export const TAGLINE = "Every video has more to give.";
 
 /**

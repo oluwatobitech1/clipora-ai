@@ -1,5 +1,5 @@
-import type { AudioOutputFormat, ErrorCode, JobDto, JobStatus, TaskType } from "@clipora/shared";
-import { RETRYABLE_ERROR_CODES } from "@clipora/shared";
+import type { AudioOutputFormat, ErrorCode, JobDto, JobStatus, TaskType } from "@framevox/shared";
+import { RETRYABLE_ERROR_CODES } from "@framevox/shared";
 
 export interface JobRow {
   id: string;

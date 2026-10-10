@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import type { TranscriptSegment } from "@clipora/shared";
+import type { TranscriptSegment } from "@framevox/shared";
 import { formatBytes } from "../lib/media";
 import { fmtClock } from "../lib/time";
 import { useBrowserTranscription } from "../lib/useBrowserTranscription";

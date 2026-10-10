@@ -2,7 +2,7 @@ import cors from "@fastify/cors";
 import rateLimit from "@fastify/rate-limit";
 import Fastify from "fastify";
 import { ZodError } from "zod";
-import type { ApiErrorBody } from "@clipora/shared";
+import type { ApiErrorBody } from "@framevox/shared";
 import { config } from "./config.ts";
 import { ApiError } from "./errors.ts";
 import { jobRoutes } from "./routes/jobs.ts";

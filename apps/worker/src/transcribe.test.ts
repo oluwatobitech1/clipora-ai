@@ -18,7 +18,7 @@ let mode: "ok" | "unauthorized" | "quota" | "busy" | "bad" = "ok";
 const requests: { auth: string | undefined; bodyBytes: number; text: string }[] = [];
 
 before(async () => {
-  dir = mkdtempSync(join(tmpdir(), "clipora-tr-"));
+  dir = mkdtempSync(join(tmpdir(), "framevox-tr-"));
   execFileSync("ffmpeg", ["-v", "error", "-y", "-f", "lavfi", "-i", "sine=frequency=300:duration=7", join(dir, "long.wav")]);
   server = createServer((req, res) => {
     const parts: Buffer[] = [];
