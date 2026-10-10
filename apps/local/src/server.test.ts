@@ -50,10 +50,10 @@ before(async () => {
 after(async () => { await stop(); await stopNoKey(); rmSync(dir, { recursive: true, force: true }); });
 
 test("reports local mode", async () => {
-  assert.deepEqual(await (await fetch(`${base}/api/mode`)).json(), { mode: "local", transcription: true, engine: "custom" });
+  { const m = await (await fetch(`${base}/api/mode`)).json(); assert.deepEqual({ ...m, links: undefined }, { mode: "local", transcription: true, engine: "custom", links: undefined }); }
   assert.equal((await (await fetch(`${baseNoKey}/api/mode`)).json()).transcription, false);
   const auto = await start({});
-  try { assert.deepEqual(await (await fetch(`${auto.url}/api/mode`)).json(), { mode: "local", transcription: true, engine: "local-whisper" }); } finally { await auto.close(); }
+  try { const m = await (await fetch(`${auto.url}/api/mode`)).json(); assert.deepEqual({ ...m, links: undefined }, { mode: "local", transcription: true, engine: "local-whisper", links: undefined }); } finally { await auto.close(); }
 });
 
 test("uploads a video, extracts real MP3, and the download is real audio", async () => {

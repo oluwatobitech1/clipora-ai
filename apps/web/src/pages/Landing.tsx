@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { MAX_UPLOAD_MB, SUPPORTED_EXTENSIONS_LABEL, TOOLS } from "@framevox/shared";
-import { UploadZone } from "../components/UploadZone";
+import { MediaSource } from "../components/MediaSource";
 import { Reveal } from "../components/Reveal";
 import { ToolIcon } from "../components/ToolIcon";
 import { AvailabilityBadge, Button, ButtonLink } from "../components/ui";
@@ -34,8 +34,8 @@ const faqs = [
     a: "No. Speech-to-text can make mistakes, especially with background noise, accents, overlapping speakers and technical terms. Always review important transcripts.",
   },
   {
-    q: "Can I use a link from another video site?",
-    a: "No. Framevox only works on files you upload and are authorized to process. It does not download content from third-party platforms.",
+    q: "Can I paste a link from YouTube, TikTok, Instagram or another site?",
+    a: "Yes, when you run Framevox on your own computer: open the \"Paste a link\" tab, paste the link to a public video and confirm you have permission to use it. Framevox fetches it with the free yt-dlp tool, then you use it like any uploaded file. Private, login-only and copy-protected videos cannot be fetched. You are responsible for having the right to use what you fetch and for following the site's terms.",
   },
   {
     q: "How are my files and transcripts handled?",
@@ -154,7 +154,7 @@ export function Landing() {
             </p>
 
             <div className="animate-page mt-9 max-w-xl [animation-delay:240ms]">
-              <UploadZone file={file} onFileChange={setFile} />
+              <MediaSource file={file} onFileChange={setFile} />
               {file ? (
                 <div className="mt-4 flex flex-wrap gap-3">
                   <Button onClick={() => go("video-to-audio")}>Extract audio</Button>
@@ -250,7 +250,7 @@ export function Landing() {
 
       <section className="bg-surface">
         <div className="mx-auto max-w-3xl px-5 py-24">
-          <SectionHead eyebrow="Pricing" title="Free on your own computer" text="Extracting audio costs nothing; transcription uses your own speech-to-text key." />
+          <SectionHead eyebrow="Pricing" title="Free on your own computer" text="Extracting audio and transcribing both run on your computer at no cost. An optional OpenAI key makes transcription faster." />
           <Reveal className="mt-8"><ButtonLink to="/pricing" variant="secondary">See details</ButtonLink></Reveal>
         </div>
       </section>

@@ -18,6 +18,7 @@ import {
   type AudioOutputFormat, type ErrorCode, type JobDto, type TaskType, type TranscriptDto,
 } from "@framevox/shared";
 import { assertProcessable, extractAudio, extractSpeechChunks, MediaError, probeMedia, validateOutput } from "../../worker/src/ffmpeg.ts";
+import { assertPublicDns, fetchLink, LinkError, parseCookiesBrowser, validateLinkUrl, ytdlpAvailable } from "./links.ts";
 import { LocalWhisperProvider } from "../../worker/src/localWhisper.ts";
 import { mergeChunks, OpenAIProvider, type ProviderResult, type TranscriptionProvider } from "../../worker/src/transcribe.ts";
 
@@ -33,6 +34,13 @@ export interface LocalConfig {
   engine: "auto" | "local" | "openai";
   localModel: string;
   ffmpegTimeoutMs: number;
+  /** Path of the yt-dlp program used for link import. */
+  ytdlpPath: string;
+  linkTimeoutMs: number;
+  /** Optional: use the signed-in session of this browser for sites that demand a login. */
+  cookiesBrowser?: string;
+  /** Tests only: lets links to this computer through. */
+  allowPrivateLinkHosts?: boolean;
   provider?: TranscriptionProvider; // tests inject one
 }
 
@@ -50,6 +58,9 @@ export function configFromEnv(env: NodeJS.ProcessEnv = process.env): LocalConfig
     engine: env.TRANSCRIBE_ENGINE === "local" || env.TRANSCRIBE_ENGINE === "openai" ? env.TRANSCRIBE_ENGINE : "auto",
     localModel: env.LOCAL_WHISPER_MODEL || "Xenova/whisper-base",
     ffmpegTimeoutMs: num("FFMPEG_TIMEOUT_SECONDS", 1800) * 1000,
+    ytdlpPath: env.YTDLP_PATH || "yt-dlp",
+    linkTimeoutMs: num("LINK_TIMEOUT_MINUTES", 15) * 60_000,
+    cookiesBrowser: parseCookiesBrowser(env.YTDLP_COOKIES_BROWSER),
   };
 }
 
@@ -63,6 +74,20 @@ interface Job {
   transcript?: TranscriptDto;
   abort: AbortController;
   cancelled: boolean;
+}
+
+interface LinkJob {
+  id: string;
+  dir: string;
+  status: "downloading" | "ready" | "failed";
+  progress: number | null;
+  errorCode: string | null;
+  message: string | null;
+  fileName: string | null;
+  filePath: string | null;
+  sizeBytes: number | null;
+  abort: AbortController;
+  createdAt: number;
 }
 
 const RETRYABLE: ErrorCode[] = ["processing_failed", "transcription_failed", "internal_error"];
@@ -90,6 +115,10 @@ export async function buildLocalApp(config: LocalConfig) {
   const engine = config.provider ? "custom" : useOpenAI ? "openai" : "local-whisper";
   // Local Whisper is slow, so smaller pieces keep the progress bar moving.
   const chunkSeconds = config.chunkSeconds || (engine === "local-whisper" ? 180 : 600);
+
+  const links = new Map<string, LinkJob>();
+  let ytdlpOk: boolean | null = null;
+  const checkYtdlp = async () => (ytdlpOk ??= await ytdlpAvailable(config.ytdlpPath));
 
   const get = (id: string): Job => {
     const job = jobs.get(id);
@@ -173,7 +202,94 @@ export async function buildLocalApp(config: LocalConfig) {
     }
   }
 
-  app.get("/api/mode", async () => ({ mode: "local", transcription: !!provider, engine }));
+  app.get("/api/mode", async () => ({ mode: "local", transcription: !!provider, engine, links: await checkYtdlp() }));
+
+  // ---- Link import: fetch a video from a web link, then hand the file to the browser like a normal upload ----
+  const linkDto = (l: LinkJob) => ({
+    id: l.id, status: l.status, progress: l.progress, errorCode: l.errorCode, message: l.message, fileName: l.fileName, sizeBytes: l.sizeBytes,
+  });
+  const getLink = (id: string): LinkJob => {
+    const l = links.get(id);
+    if (!l) throw Object.assign(new Error("Link download not found."), { statusCode: 404, code: "not_found" });
+    return l;
+  };
+  async function dropLink(l: LinkJob) {
+    l.abort.abort();
+    links.delete(l.id);
+    await rm(l.dir, { recursive: true, force: true });
+  }
+
+  app.post<{ Body: { url?: unknown; confirmed?: unknown } }>("/api/local/links", async (request, reply) => {
+    const body = request.body ?? {};
+    if (body.confirmed !== true) {
+      throw Object.assign(new Error("Please confirm that you own this content or have permission to use it."), { statusCode: 400, code: "consent_required" });
+    }
+    let url: string;
+    try {
+      url = validateLinkUrl(typeof body.url === "string" ? body.url : "", { allowPrivateHosts: config.allowPrivateLinkHosts });
+    } catch (err) {
+      throw Object.assign(err as Error, { statusCode: 400 });
+    }
+    if (!config.allowPrivateLinkHosts) {
+      try { await assertPublicDns(url); } catch (err) { throw Object.assign(err as Error, { statusCode: 400 }); }
+    }
+    if (!(await checkYtdlp())) {
+      // Re-check once: the visitor may have installed it since the server started.
+      ytdlpOk = null;
+      if (!(await checkYtdlp())) {
+        throw Object.assign(new Error("Link import needs the free tool yt-dlp. Install it (Windows: winget install yt-dlp.yt-dlp), then restart Framevox."), { statusCode: 503, code: "link_tool_missing" });
+      }
+    }
+    if ([...links.values()].filter((l) => l.status === "downloading").length >= 2) {
+      throw Object.assign(new Error("Two links are already being fetched. Wait for one to finish."), { statusCode: 429, code: "busy" });
+    }
+    const id = randomUUID();
+    const dir = join(root, `link-${id}`);
+    await mkdir(dir);
+    const link: LinkJob = { id, dir, status: "downloading", progress: null, errorCode: null, message: null, fileName: null, filePath: null, sizeBytes: null, abort: new AbortController(), createdAt: Date.now() };
+    links.set(id, link);
+    void (async () => {
+      try {
+        const res = await fetchLink(url, dir, {
+          ytdlpPath: config.ytdlpPath, maxMb: config.maxUploadMb, maxDurationSeconds: config.maxDurationSeconds,
+          timeoutMs: config.linkTimeoutMs, cookiesBrowser: config.cookiesBrowser, signal: link.abort.signal, onProgress: (f) => { link.progress = f; },
+        });
+        link.filePath = res.path; link.fileName = res.name; link.sizeBytes = (await stat(res.path)).size;
+        link.progress = 1; link.status = "ready";
+      } catch (err) {
+        if (link.abort.signal.aborted) return;
+        link.status = "failed"; link.progress = null;
+        if (err instanceof LinkError) { link.errorCode = err.code; link.message = err.message; }
+        else {
+          app.log.error({ err: err instanceof Error ? err.message : String(err) }, "link import failed");
+          link.errorCode = "link_failed"; link.message = "Could not fetch this link. Please try again.";
+        }
+      }
+    })();
+    return reply.code(202).send(linkDto(link));
+  });
+
+  app.get<{ Params: { id: string } }>("/api/local/links/:id", async (request) => linkDto(getLink(request.params.id)));
+
+  app.get<{ Params: { id: string } }>("/api/local/links/:id/file", async (request, reply) => {
+    const l = getLink(request.params.id);
+    if (l.status !== "ready" || !l.filePath || !l.fileName) throw Object.assign(new Error("The file is not ready yet."), { statusCode: 409, code: "not_found" });
+    const name = l.fileName.replace(/["\\\r\n]/g, "_");
+    const isAudio = /\.(mp3|wav|m4a)$/i.test(name);
+    const ext = name.slice(name.lastIndexOf(".") + 1).toLowerCase();
+    const type = isAudio ? (ext === "mp3" ? "audio/mpeg" : ext === "wav" ? "audio/wav" : "audio/mp4") : ext === "webm" ? "video/webm" : ext === "mkv" ? "video/x-matroska" : ext === "mov" ? "video/quicktime" : "video/mp4";
+    return reply
+      .header("Content-Type", type)
+      .header("Content-Length", String(l.sizeBytes ?? 0))
+      .header("Content-Disposition", `attachment; filename*=UTF-8''${encodeURIComponent(name)}`)
+      .send(createReadStream(l.filePath));
+  });
+
+  // Cancels a running fetch, or removes the temporary copy once the browser has it.
+  app.delete<{ Params: { id: string } }>("/api/local/links/:id", async (request, reply) => {
+    await dropLink(getLink(request.params.id));
+    return reply.code(204).send();
+  });
   app.get("/api/health", async () => ({ ok: true }));
 
   app.post("/api/local/jobs", async (request, reply) => {
@@ -268,7 +384,7 @@ export async function buildLocalApp(config: LocalConfig) {
   });
 
   app.setErrorHandler((err: Error & { statusCode?: number; code?: string }, request, reply) => {
-    const status = err.statusCode && err.statusCode < 500 ? err.statusCode : 500;
+    const status = err.statusCode && (err.statusCode < 500 || err.statusCode === 503) ? err.statusCode : 500;
     if (status === 500) request.log.error({ err: err.message }, "unhandled error");
     const code = status === 413 || err.code === "FST_REQ_FILE_TOO_LARGE" ? "file_too_large" : (err.code && /^[a-z_]+$/.test(err.code) ? err.code : status === 500 ? "internal_error" : "validation_failed");
     const message = status === 500 ? "Something went wrong. Please try again." : err.code === "FST_REQ_FILE_TOO_LARGE" ? `This file is larger than the ${config.maxUploadMb} MB limit.` : err.message;
@@ -277,6 +393,7 @@ export async function buildLocalApp(config: LocalConfig) {
 
   // Delete finished jobs after the retention time, so the temp folder never fills up.
   const sweep = setInterval(() => {
+    for (const l of links.values()) if (Date.now() - l.createdAt > 30 * 60_000) void dropLink(l);
     for (const job of jobs.values()) {
       const done = job.dto.status === "completed" || job.dto.status === "failed";
       if (done && job.dto.expiresAt && Date.parse(job.dto.expiresAt) < Date.now()) void drop(job);
@@ -286,6 +403,7 @@ export async function buildLocalApp(config: LocalConfig) {
 
   app.addHook("onClose", async () => {
     clearInterval(sweep);
+    for (const l of links.values()) l.abort.abort();
     await rm(root, { recursive: true, force: true });
   });
 

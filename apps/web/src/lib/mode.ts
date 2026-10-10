@@ -5,6 +5,8 @@ export interface ModeInfo {
   transcription: boolean;
   /** "local-whisper" = free, on this computer. "openai" = cloud. */
   engine: string;
+  /** True when the link downloader (yt-dlp) is installed. Only local mode can import links. */
+  links: boolean;
 }
 
 let cached: Promise<ModeInfo> | null = null;
@@ -13,8 +15,8 @@ let cached: Promise<ModeInfo> | null = null;
 export function loadMode(): Promise<ModeInfo> {
   cached ??= fetch("/api/mode")
     .then((r) => (r.ok ? r.json() : null))
-    .then((j: { mode?: string; transcription?: boolean; engine?: string } | null) => ({ local: j?.mode === "local", transcription: !!j?.transcription, engine: j?.engine ?? "" }))
-    .catch(() => ({ local: false, transcription: false, engine: "" }));
+    .then((j: { mode?: string; transcription?: boolean; engine?: string; links?: boolean } | null) => ({ local: j?.mode === "local", transcription: !!j?.transcription, engine: j?.engine ?? "", links: !!j?.links }))
+    .catch(() => ({ local: false, transcription: false, engine: "", links: false }));
   return cached;
 }
 

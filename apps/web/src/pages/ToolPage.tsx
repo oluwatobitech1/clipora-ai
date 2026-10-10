@@ -11,7 +11,7 @@ import { Summarizer } from "../components/Summarizer";
 import { Transcriber } from "../components/Transcriber";
 import { Translator } from "../components/Translator";
 import { ToolIcon } from "../components/ToolIcon";
-import { UploadZone } from "../components/UploadZone";
+import { MediaSource } from "../components/MediaSource";
 import { AvailabilityBadge, ButtonLink, Notice } from "../components/ui";
 import { clearPendingFile, peekPendingFile } from "../lib/pendingFile";
 import { NotFound } from "./NotFound";
@@ -68,7 +68,7 @@ export function ToolPage() {
         </div>
       ) : (
         <div className="mt-8 space-y-6">
-          <UploadZone file={file} onFileChange={setFile} />
+          <MediaSource file={file} onFileChange={setFile} />
 
           {tool.id === "video-to-audio" && (
             <div>
