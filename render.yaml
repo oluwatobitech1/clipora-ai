@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: framevox-links
+    runtime: docker
+    dockerfilePath: ./Dockerfile.link
+    plan: free
+    healthCheckPath: /api/health
+    envVars:
+      - key: LINK_SERVER
+        value: "1"
+      - key: CORS_ORIGIN
+        sync: false   # paste your Vercel site address, e.g. https://framevox.vercel.app
