@@ -127,6 +127,8 @@ export interface FetchOptions {
   timeoutMs: number;
   /** Use the signed-in session of this browser on the same computer. The visitor opts in through .env; off by default. */
   cookiesBrowser?: string;
+  /** Speech tools only need sound: fetch just the audio track (much smaller and faster than video). */
+  audioOnly?: boolean;
   onProgress?: (fraction: number) => void;
   signal?: AbortSignal;
 }
@@ -160,15 +162,18 @@ export function explainYtdlpError(stderr: string): LinkError {
 }
 
 /** The exact yt-dlp command line. Exported so tests can check the safety flags. */
-export function buildYtdlpArgs(url: string, dir: string, o: Pick<FetchOptions, "maxMb" | "maxDurationSeconds" | "cookiesBrowser">): string[] {
+export function buildYtdlpArgs(url: string, dir: string, o: Pick<FetchOptions, "maxMb" | "maxDurationSeconds" | "cookiesBrowser" | "audioOnly">): string[] {
   const args = [
     "--ignore-config", "--no-playlist", "--no-warnings", "--no-exec", "--no-cache-dir", "--no-mtime", "--no-part",
     "--socket-timeout", "20", "--retries", "3", "--fragment-retries", "3",
     "--max-filesize", `${o.maxMb}M`,
     "--match-filters", `!is_live & duration <=? ${Math.floor(o.maxDurationSeconds)}`,
-    // Prefer a modest size (720p or less): this is for speech and clips, not for archiving.
-    "-f", "bv*[height<=720]+ba/b[height<=720]/bv*+ba/b",
-    "--merge-output-format", "mp4", "--remux-video", "mp4>mp4/mov>mp4/m4a>m4a",
+    "--concurrent-fragments", "4",
+    ...(o.audioOnly
+      // Sound only: a fraction of the download, and no video to merge.
+      ? ["-f", "ba[ext=m4a]/ba/b", "-x", "--audio-format", "m4a"]
+      // Prefer a modest size (480p or less): this is for speech and clips, not for archiving.
+      : ["-f", "bv*[height<=480]+ba/b[height<=480]/bv*+ba/b", "--merge-output-format", "mp4", "--remux-video", "mp4>mp4/mov>mp4/m4a>m4a"]),
     "--restrict-filenames", "-P", dir, "-o", "media.%(ext)s",
     "--print-to-file", "%(title).150B", join(dir, "title.txt"),
     "--newline", "--progress", "--progress-template", "download:FVPROGRESS %(progress.downloaded_bytes)s %(progress.total_bytes)s %(progress.total_bytes_estimate)s",

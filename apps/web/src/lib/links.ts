@@ -38,13 +38,13 @@ const MIME_BY_EXT: Record<string, string> = {
  */
 export async function importFromLink(
   url: string,
-  opts: { onProgress?: (fraction: number | null) => void; signal?: AbortSignal } = {},
+  opts: { onProgress?: (fraction: number | null) => void; signal?: AbortSignal; audioOnly?: boolean } = {},
 ): Promise<File> {
   const start = await json<LinkStatus>(
     await fetch("/api/local/links", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ url, confirmed: true }),
+      body: JSON.stringify({ url, confirmed: true, audioOnly: opts.audioOnly === true }),
       signal: opts.signal,
     }),
   );
@@ -55,7 +55,7 @@ export async function importFromLink(
   try {
     for (;;) {
       if (opts.signal?.aborted) throw new DOMException("Cancelled", "AbortError");
-      await new Promise((r) => setTimeout(r, 700));
+      await new Promise((r) => setTimeout(r, 300));
       const st = await json<LinkStatus>(await fetch(`/api/local/links/${id}`, { signal: opts.signal }));
       opts.onProgress?.(st.progress);
       if (st.status === "failed") throw new LinkImportError(st.errorCode ?? "link_failed", st.message ?? "Could not fetch this link.");

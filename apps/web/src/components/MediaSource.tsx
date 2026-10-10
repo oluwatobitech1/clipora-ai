@@ -8,6 +8,8 @@ import { Button, Notice } from "./ui";
 interface Props {
   file: File | null;
   onFileChange: (file: File | null) => void;
+  /** True for tools that only need the sound: links then fetch audio only, which is much faster. */
+  audioOnly?: boolean;
 }
 
 type Tab = "upload" | "link";
@@ -38,7 +40,7 @@ function isTypingTarget(t: EventTarget | null): boolean {
  * Pasting a link anywhere on the page switches to the link tab and, once the visitor has confirmed they have
  * permission, starts fetching straight away. Either way the result is one File, so every tool behaves the same.
  */
-export function MediaSource({ file, onFileChange }: Props) {
+export function MediaSource({ file, onFileChange, audioOnly }: Props) {
   const mode = useMode();
   const [tab, setTab] = useState<Tab>("upload");
   const [url, setUrl] = useState("");
@@ -49,10 +51,11 @@ export function MediaSource({ file, onFileChange }: Props) {
   const id = useId();
   const canLink = mode?.local === true;
   const active = !file && canLink;
+  const showTabs = !file; // the link box is always visible; it explains itself when the local server is not running
 
   const parsed = parseLink(url);
   const busy = phase.kind === "fetching";
-  const ready = !!parsed && confirmed && !busy;
+  const ready = !!parsed && confirmed && !busy && canLink;
 
   const fetchIt = useCallback(async (target: string, platform: string | null) => {
     if (abortRef.current) return; // one fetch at a time
@@ -60,7 +63,7 @@ export function MediaSource({ file, onFileChange }: Props) {
     abortRef.current = ctl;
     setPhase({ kind: "fetching", pct: null, platform });
     try {
-      const f = await importFromLink(target, { signal: ctl.signal, onProgress: (pct) => setPhase({ kind: "fetching", pct, platform }) });
+      const f = await importFromLink(target, { signal: ctl.signal, audioOnly, onProgress: (pct) => setPhase({ kind: "fetching", pct, platform }) });
       setPhase({ kind: "idle" });
       setUrl("");
       onFileChange(f);
@@ -74,7 +77,7 @@ export function MediaSource({ file, onFileChange }: Props) {
     } finally {
       abortRef.current = null;
     }
-  }, [onFileChange]);
+  }, [onFileChange, audioOnly]);
 
   /** Takes pasted text: shows the clean link, and starts fetching when permission was already confirmed. */
   const takePasted = useCallback((text: string) => {
@@ -99,7 +102,7 @@ export function MediaSource({ file, onFileChange }: Props) {
     return () => document.removeEventListener("paste", onPaste);
   }, [active, takePasted]);
 
-  if (!active) return <UploadZone file={file} onFileChange={onFileChange} />;
+  if (!showTabs) return <UploadZone file={file} onFileChange={onFileChange} />;
 
   function onInputPaste(e: ClipboardEvent<HTMLInputElement>) {
     const text = e.clipboardData.getData("text");
@@ -161,7 +164,14 @@ export function MediaSource({ file, onFileChange }: Props) {
           aria-labelledby={`${id}-tab-link`}
           className="animate-pop rounded-2xl border border-brand-200 bg-white/90 p-5 text-left shadow-[var(--shadow-soft)]"
         >
-          {mode?.links === false && (
+          {mode !== null && !canLink && (
+            <div className="mb-4">
+              <Notice tone="error">
+                Link import runs on your own computer. Stop the app, then start it with <code className="rounded bg-white px-1">npm run dev</code> from the project folder (this starts the web page <em>and</em> the local server), and open <strong>http://localhost:5173</strong>. Install the free <strong>yt-dlp</strong> tool once: <code className="rounded bg-white px-1">winget install yt-dlp.yt-dlp</code>.
+              </Notice>
+            </div>
+          )}
+          {canLink && mode?.links === false && (
             <div className="mb-4">
               <Notice tone="error">
                 Link import needs the free tool <strong>yt-dlp</strong>. Windows: run <code className="rounded bg-white px-1">winget install yt-dlp.yt-dlp</code>, then close and reopen this app. Mac: <code className="rounded bg-white px-1">brew install yt-dlp</code>.

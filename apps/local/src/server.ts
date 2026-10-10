@@ -56,7 +56,7 @@ export function configFromEnv(env: NodeJS.ProcessEnv = process.env): LocalConfig
     transcribeModel: env.TRANSCRIBE_MODEL || "whisper-1",
     chunkSeconds: num("TRANSCRIBE_CHUNK_SECONDS", 0), // 0 = pick by engine
     engine: env.TRANSCRIBE_ENGINE === "local" || env.TRANSCRIBE_ENGINE === "openai" ? env.TRANSCRIBE_ENGINE : "auto",
-    localModel: env.LOCAL_WHISPER_MODEL || "Xenova/whisper-base",
+    localModel: env.LOCAL_WHISPER_MODEL || "Xenova/whisper-tiny",
     ffmpegTimeoutMs: num("FFMPEG_TIMEOUT_SECONDS", 1800) * 1000,
     ytdlpPath: env.YTDLP_PATH || "yt-dlp",
     linkTimeoutMs: num("LINK_TIMEOUT_MINUTES", 15) * 60_000,
@@ -112,6 +112,8 @@ export async function buildLocalApp(config: LocalConfig) {
         ? new OpenAIProvider({ apiKey: config.openaiApiKey, baseUrl: config.openaiBaseUrl, model: config.transcribeModel, timeoutMs: 300_000 })
         : null
       : new LocalWhisperProvider({ model: config.localModel }));
+  // Load the speech model now, in the background, so the first transcription does not wait for it.
+  if (provider instanceof LocalWhisperProvider && !config.provider) provider.warmup();
   const engine = config.provider ? "custom" : useOpenAI ? "openai" : "local-whisper";
   // Local Whisper is slow, so smaller pieces keep the progress bar moving.
   const chunkSeconds = config.chunkSeconds || (engine === "local-whisper" ? 180 : 600);
@@ -219,7 +221,7 @@ export async function buildLocalApp(config: LocalConfig) {
     await rm(l.dir, { recursive: true, force: true });
   }
 
-  app.post<{ Body: { url?: unknown; confirmed?: unknown } }>("/api/local/links", async (request, reply) => {
+  app.post<{ Body: { url?: unknown; confirmed?: unknown; audioOnly?: unknown } }>("/api/local/links", async (request, reply) => {
     const body = request.body ?? {};
     if (body.confirmed !== true) {
       throw Object.assign(new Error("Please confirm that you own this content or have permission to use it."), { statusCode: 400, code: "consent_required" });
@@ -252,7 +254,7 @@ export async function buildLocalApp(config: LocalConfig) {
       try {
         const res = await fetchLink(url, dir, {
           ytdlpPath: config.ytdlpPath, maxMb: config.maxUploadMb, maxDurationSeconds: config.maxDurationSeconds,
-          timeoutMs: config.linkTimeoutMs, cookiesBrowser: config.cookiesBrowser, signal: link.abort.signal, onProgress: (f) => { link.progress = f; },
+          timeoutMs: config.linkTimeoutMs, cookiesBrowser: config.cookiesBrowser, audioOnly: body.audioOnly === true, signal: link.abort.signal, onProgress: (f) => { link.progress = f; },
         });
         link.filePath = res.path; link.fileName = res.name; link.sizeBytes = (await stat(res.path)).size;
         link.progress = 1; link.status = "ready";

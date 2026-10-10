@@ -24,7 +24,28 @@ export function useBrowserTranscription() {
 
   useEffect(() => () => workerRef.current?.terminate(), []);
 
+  /** The browser's own decoder: instant, no download. Returns null when it cannot read this file, so ffmpeg.wasm takes over. */
+  async function nativeDecode(f: File): Promise<Float32Array | null> {
+    if (f.size > 200 * 1024 * 1024) return null;
+    try {
+      const AC = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      const ctx = new AC();
+      const decoded = await ctx.decodeAudioData(await f.arrayBuffer());
+      void ctx.close();
+      const off = new OfflineAudioContext(1, Math.max(1, Math.ceil(decoded.duration * 16000)), 16000);
+      const src = off.createBufferSource();
+      src.buffer = decoded;
+      src.connect(off.destination);
+      src.start();
+      return (await off.startRendering()).getChannelData(0).slice();
+    } catch {
+      return null;
+    }
+  }
+
   async function decodeAudio(f: File): Promise<Float32Array> {
+    const fast = await nativeDecode(f);
+    if (fast) return fast;
     const ff = await getFfmpeg();
     await ff.writeFile("input", new Uint8Array(await f.arrayBuffer()));
     const code = await ff.exec(["-i", "input", "-map", "0:a:0", "-vn", "-ac", "1", "-ar", "16000", "-f", "f32le", "audio.raw"]);
@@ -47,15 +68,16 @@ export function useBrowserTranscription() {
     }
     try {
       setPhase({ kind: "prepare" });
+      workerRef.current?.terminate();
+      const worker = new Worker(new URL("./whisperWorker.ts", import.meta.url), { type: "module" });
+      workerRef.current = worker;
+      worker.postMessage({ preload: true }); // model downloads while the audio is read
       const audio = await decodeAudio(file);
       const secs = audio.length / 16000;
       if (secs > MAX_MINUTES * 60) throw new Error(`This recording is longer than ${MAX_MINUTES} minutes. Please use a shorter clip.`);
       if (audio.length < 1600) throw new Error("No audio was found in this file.");
       setSeconds(secs);
 
-      workerRef.current?.terminate();
-      const worker = new Worker(new URL("./whisperWorker.ts", import.meta.url), { type: "module" });
-      workerRef.current = worker;
       worker.onmessage = (e: MessageEvent) => {
         const m = e.data;
         if (m.type === "download") setPhase({ kind: "download", pct: m.pct });

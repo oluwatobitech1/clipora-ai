@@ -82,6 +82,11 @@ export class LocalWhisperProvider implements TranscriptionProvider {
     return this.recognizer;
   }
 
+  /** Starts loading the model without waiting for it. Errors are logged by load() and retried on first use. */
+  warmup(): void {
+    this.load().catch(() => undefined);
+  }
+
   /** One recognition at a time: the model is CPU-heavy and not safe to run in parallel. */
   transcribe(filePath: string, opts: { language?: string; signal?: AbortSignal }): Promise<ProviderResult> {
     const run = this.queue.then(() => this.run(filePath, opts));
