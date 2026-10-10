@@ -1,29 +1,5 @@
 import { isAbort } from "./mode";
 
-/** Address of the hosted link server (set VITE_LINK_API on Vercel). Empty = use the local server on this computer. */
-export const LINK_API = ((import.meta.env.VITE_LINK_API as string | undefined) ?? "").replace(/\/+$/, "");
-
-/** Tells a sleeping/offline server apart from one that is up but refuses this website (CORS). */
-async function explainNetworkFailure(url: string): Promise<LinkImportError> {
-  if (!LINK_API || !url.startsWith(LINK_API)) {
-    return new LinkImportError("link_network", "Could not reach the local server. Is `npm run dev` still running?");
-  }
-  let reachable = false;
-  try {
-    await fetch(`${LINK_API}/api/health`, { mode: "no-cors", signal: AbortSignal.timeout(8000) });
-    reachable = true; // an opaque answer still proves the server is up
-  } catch { /* offline or asleep */ }
-  return reachable
-    ? new LinkImportError("link_cors", `The link server is running but does not allow this website yet. On Render, open the service > Environment, set CORS_ORIGIN to * (or to ${window.location.origin}), save, and let it redeploy.`)
-    : new LinkImportError("link_network", "The link server did not answer. If it is on a free plan it may be waking up: wait about a minute and try again. Otherwise check that VITE_LINK_API on Vercel is the exact Render address (https://..., no / at the end), then redeploy.");
-}
-async function call(url: string, init?: RequestInit): Promise<Response> {
-  try { return await fetch(url, init); } catch (err) {
-    if (isAbort(err)) throw err;
-    throw await explainNetworkFailure(url);
-  }
-}
-
 interface LinkStatus {
   id: string;
   status: "downloading" | "ready" | "failed";
@@ -62,30 +38,29 @@ const MIME_BY_EXT: Record<string, string> = {
  */
 export async function importFromLink(
   url: string,
-  opts: { onProgress?: (fraction: number | null) => void; signal?: AbortSignal; audioOnly?: boolean; remote?: boolean } = {},
+  opts: { onProgress?: (fraction: number | null) => void; signal?: AbortSignal } = {},
 ): Promise<File> {
-  const base = opts.remote ? LINK_API : "";
   const start = await json<LinkStatus>(
-    await call(`${base}/api/local/links`, {
+    await fetch("/api/local/links", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ url, confirmed: true, audioOnly: opts.audioOnly === true }),
+      body: JSON.stringify({ url, confirmed: true }),
       signal: opts.signal,
     }),
   );
   const id = start.id;
-  const cleanup = () => { void fetch(`${base}/api/local/links/${id}`, { method: "DELETE" }).catch(() => {}); };
+  const cleanup = () => { void fetch(`/api/local/links/${id}`, { method: "DELETE" }).catch(() => {}); };
   opts.signal?.addEventListener("abort", cleanup, { once: true });
 
   try {
     for (;;) {
       if (opts.signal?.aborted) throw new DOMException("Cancelled", "AbortError");
-      await new Promise((r) => setTimeout(r, 300));
-      const st = await json<LinkStatus>(await call(`${base}/api/local/links/${id}`, { signal: opts.signal }));
+      await new Promise((r) => setTimeout(r, 700));
+      const st = await json<LinkStatus>(await fetch(`/api/local/links/${id}`, { signal: opts.signal }));
       opts.onProgress?.(st.progress);
       if (st.status === "failed") throw new LinkImportError(st.errorCode ?? "link_failed", st.message ?? "Could not fetch this link.");
       if (st.status === "ready") {
-        const res = await call(`${base}/api/local/links/${id}/file`, { signal: opts.signal });
+        const res = await fetch(`/api/local/links/${id}/file`, { signal: opts.signal });
         if (!res.ok) throw new LinkImportError("link_failed", "The video was fetched but could not be loaded. Please try again.");
         const blob = await res.blob();
         const name = st.fileName ?? "video.mp4";

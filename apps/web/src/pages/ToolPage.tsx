@@ -16,9 +16,6 @@ import { AvailabilityBadge, ButtonLink, Notice } from "../components/ui";
 import { clearPendingFile, peekPendingFile } from "../lib/pendingFile";
 import { NotFound } from "./NotFound";
 
-/** Tools that never show or cut the picture, so a pasted link only needs its audio track. */
-const AUDIO_ONLY_TOOLS: string[] = ["video-to-audio", "video-to-text", "video-summarizer", "translate", "find-moment", "speaking-coach"];
-
 export function ToolPage() {
   const { toolId } = useParams();
   const tool = TOOLS.find((t) => t.id === toolId);
@@ -71,7 +68,7 @@ export function ToolPage() {
         </div>
       ) : (
         <div className="mt-8 space-y-6">
-          <MediaSource file={file} onFileChange={setFile} audioOnly={AUDIO_ONLY_TOOLS.includes(tool.id)} />
+          <MediaSource file={file} onFileChange={setFile} />
 
           {tool.id === "video-to-audio" && (
             <div>

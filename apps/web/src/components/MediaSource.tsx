@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useId, useRef, useState, type ClipboardEvent, type KeyboardEvent } from "react";
-import { importFromLink, LINK_API, LinkImportError } from "../lib/links";
+import { importFromLink, LinkImportError } from "../lib/links";
 import { isAbort, useMode } from "../lib/mode";
 import { parseLink } from "../lib/platform";
 import { UploadZone } from "./UploadZone";
@@ -8,8 +8,6 @@ import { Button, Notice } from "./ui";
 interface Props {
   file: File | null;
   onFileChange: (file: File | null) => void;
-  /** True for tools that only need the sound: links then fetch audio only, which is much faster. */
-  audioOnly?: boolean;
 }
 
 type Tab = "upload" | "link";
@@ -40,7 +38,7 @@ function isTypingTarget(t: EventTarget | null): boolean {
  * Pasting a link anywhere on the page switches to the link tab and, once the visitor has confirmed they have
  * permission, starts fetching straight away. Either way the result is one File, so every tool behaves the same.
  */
-export function MediaSource({ file, onFileChange, audioOnly }: Props) {
+export function MediaSource({ file, onFileChange }: Props) {
   const mode = useMode();
   const [tab, setTab] = useState<Tab>("upload");
   const [url, setUrl] = useState("");
@@ -49,26 +47,12 @@ export function MediaSource({ file, onFileChange, audioOnly }: Props) {
   const abortRef = useRef<AbortController | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const id = useId();
-  const [linkServerOk, setLinkServerOk] = useState<boolean | null>(null); // null = still checking
-  const remote = mode !== null && mode.local !== true && LINK_API !== "" && linkServerOk !== false; // hosted site with a working link server
-  const canLink = mode?.local === true || remote;
-  const onLocalhost = typeof window !== "undefined" && ["localhost", "127.0.0.1"].includes(window.location.hostname);
+  const canLink = mode?.local === true;
   const active = !file && canLink;
-  // Ask the link server if it is really usable from this website. If not, the tab is hidden (no errors for visitors).
-  useEffect(() => {
-    if (!LINK_API || mode === null || mode.local) return;
-    let live = true;
-    fetch(`${LINK_API}/api/mode`, { signal: AbortSignal.timeout(45_000) }) // generous: a free server may be waking up
-      .then((r) => (r.ok ? r.json() : null))
-      .then((j: { links?: boolean } | null) => { if (live) setLinkServerOk(j?.links === true); })
-      .catch(() => { if (live) setLinkServerOk(false); });
-    return () => { live = false; };
-  }, [mode]);
-  const showTabs = !file && (canLink || (mode !== null && onLocalhost)); // hidden on a live site with no working link server; on your own computer it explains how to start it
 
   const parsed = parseLink(url);
   const busy = phase.kind === "fetching";
-  const ready = !!parsed && confirmed && !busy && canLink;
+  const ready = !!parsed && confirmed && !busy;
 
   const fetchIt = useCallback(async (target: string, platform: string | null) => {
     if (abortRef.current) return; // one fetch at a time
@@ -76,7 +60,7 @@ export function MediaSource({ file, onFileChange, audioOnly }: Props) {
     abortRef.current = ctl;
     setPhase({ kind: "fetching", pct: null, platform });
     try {
-      const f = await importFromLink(target, { signal: ctl.signal, audioOnly, remote, onProgress: (pct) => setPhase({ kind: "fetching", pct, platform }) });
+      const f = await importFromLink(target, { signal: ctl.signal, onProgress: (pct) => setPhase({ kind: "fetching", pct, platform }) });
       setPhase({ kind: "idle" });
       setUrl("");
       onFileChange(f);
@@ -90,7 +74,7 @@ export function MediaSource({ file, onFileChange, audioOnly }: Props) {
     } finally {
       abortRef.current = null;
     }
-  }, [onFileChange, audioOnly, remote]);
+  }, [onFileChange]);
 
   /** Takes pasted text: shows the clean link, and starts fetching when permission was already confirmed. */
   const takePasted = useCallback((text: string) => {
@@ -115,7 +99,7 @@ export function MediaSource({ file, onFileChange, audioOnly }: Props) {
     return () => document.removeEventListener("paste", onPaste);
   }, [active, takePasted]);
 
-  if (!showTabs) return <UploadZone file={file} onFileChange={onFileChange} />;
+  if (!active) return <UploadZone file={file} onFileChange={onFileChange} />;
 
   function onInputPaste(e: ClipboardEvent<HTMLInputElement>) {
     const text = e.clipboardData.getData("text");
@@ -177,14 +161,7 @@ export function MediaSource({ file, onFileChange, audioOnly }: Props) {
           aria-labelledby={`${id}-tab-link`}
           className="animate-pop rounded-2xl border border-brand-200 bg-white/90 p-5 text-left shadow-[var(--shadow-soft)]"
         >
-          {mode !== null && !canLink && (
-            <div className="mb-4">
-              <Notice tone="error">
-                Link import runs on your own computer. Stop the app, then start it with <code className="rounded bg-white px-1">npm run dev</code> from the project folder (this starts the web page <em>and</em> the local server), and open <strong>http://localhost:5173</strong>. Install the free <strong>yt-dlp</strong> tool once: <code className="rounded bg-white px-1">winget install yt-dlp.yt-dlp</code>.
-              </Notice>
-            </div>
-          )}
-          {mode?.local === true && mode.links === false && (
+          {mode?.links === false && (
             <div className="mb-4">
               <Notice tone="error">
                 Link import needs the free tool <strong>yt-dlp</strong>. Windows: run <code className="rounded bg-white px-1">winget install yt-dlp.yt-dlp</code>, then close and reopen this app. Mac: <code className="rounded bg-white px-1">brew install yt-dlp</code>.
