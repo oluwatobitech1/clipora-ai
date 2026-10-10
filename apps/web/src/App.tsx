@@ -36,6 +36,14 @@ function Header() {
   );
 }
 
+// Links to the converter on this page are live. The other tools are not built yet, so they point to "#" until they exist.
+const FOOTER_LINKS: { title: string; links: { label: string; href: string }[] }[] = [
+  { title: "Video Converter", links: ["MP4 Converter", "Video to GIF", "MOV to MP4", "Video Converter"].map((label) => ({ label, href: "#" })) },
+  { title: "Audio Converter", links: ["MP3 Converter", "MP4 to MP3", "Video to MP3", "Audio Converter"].map((label) => ({ label, href: "#convert" })) },
+  { title: "Image Converter", links: ["JPG to PDF", "PDF to JPG", "HEIC to JPG", "Image to PDF", "Image Converter"].map((label) => ({ label, href: "#" })) },
+  { title: "Document & Ebook", links: ["PDF to WORD", "EPUB to PDF", "EPUB to MOBI", "Document Converter"].map((label) => ({ label, href: "#" })) },
+];
+
 export function App() {
   return (
     <>
@@ -113,10 +121,23 @@ export function App() {
         </section>
       </main>
 
-      <footer className="border-t border-line bg-surface">
-        <div className="mx-auto flex max-w-5xl flex-col items-center gap-3 px-5 py-8 text-center sm:flex-row sm:justify-between sm:text-left">
-          <Logo />
-          <p className="text-xs text-muted">© {new Date().getFullYear()} Video to Audio. Only convert videos you have the right to use.</p>
+      <footer className="bg-[#1e2d47] text-white">
+        <nav aria-label="Other converters" className="mx-auto grid max-w-5xl grid-cols-2 gap-x-6 gap-y-10 px-5 py-14 lg:grid-cols-4">
+          {FOOTER_LINKS.map((col) => (
+            <div key={col.title}>
+              <h3 className="font-display text-lg font-semibold">{col.title}</h3>
+              <ul className="mt-5 space-y-4">
+                {col.links.map((l) => (
+                  <li key={l.label}>
+                    <a href={l.href} className="text-[0.95rem] text-white/90 transition-colors hover:text-aqua-400">{l.label}</a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </nav>
+        <div className="border-t border-white/10">
+          <p className="mx-auto max-w-5xl px-5 py-6 text-center text-xs text-white/60 sm:text-left">© {new Date().getFullYear()} Video to Audio. Only convert videos you have the right to use.</p>
         </div>
       </footer>
     </>

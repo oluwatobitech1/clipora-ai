@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState, type DragEvent } from "react";
 import { ACCEPT_ATTRIBUTE, MAX_UPLOAD_MB, SUPPORTED_EXTENSIONS_LABEL, buildDownloadName, validateMediaFile, type AudioOutputFormat } from "@framevox/shared";
 import { getFfmpeg, resetFfmpeg } from "../lib/browserFfmpeg";
 import { formatBytes, formatDuration, readMediaDuration } from "../lib/media";
+import { DEFAULT_OPTIONS, MAX_VOLUME, buildEncodeArgs, isPlain, splitSeconds, toSeconds, validateOptions, type AudioOptions } from "../lib/audioOptions";
 import { Button, buttonClass, Notice } from "./ui";
 
 const FORMATS: { id: AudioOutputFormat; label: string; hint: string }[] = [
@@ -9,18 +10,13 @@ const FORMATS: { id: AudioOutputFormat; label: string; hint: string }[] = [
   { id: "m4a", label: "M4A", hint: "Fastest, great on iPhone" },
   { id: "wav", label: "WAV", hint: "Lossless, big file" },
 ];
-const CODEC: Record<AudioOutputFormat, string[]> = {
-  mp3: ["-c:a", "libmp3lame", "-q:a", "2"],
-  wav: ["-c:a", "pcm_s16le"],
-  m4a: ["-c:a", "aac", "-b:a", "192k"],
-};
 const MIME: Record<AudioOutputFormat, string> = { mp3: "audio/mpeg", wav: "audio/wav", m4a: "audio/mp4" };
 const COPY_FALLBACK_MAX_MB = 300;
 
 class ConvertError extends Error {}
 
 /** Pulls the audio out of a video inside the browser. The file is read in place (never copied or uploaded). */
-async function extractAudio(file: File, format: AudioOutputFormat, onProgress: (pct: number) => void): Promise<Blob> {
+async function extractAudio(file: File, format: AudioOutputFormat, options: AudioOptions, duration: number | null, onProgress: (pct: number) => void): Promise<Blob> {
   const ff = await getFfmpeg();
   const dir = "/in";
   let input = "input";
@@ -55,8 +51,8 @@ async function extractAudio(file: File, format: AudioOutputFormat, onProgress: (
     const out = `out.${format}`;
     const base = ["-i", input, "-map", "0:a:0", "-vn", "-sn", "-dn"];
     let code = 1;
-    if (format === "m4a" && isAac) code = await ff.exec([...base, "-c:a", "copy", out]); // no re-encoding: seconds, original quality
-    if (code !== 0) code = await ff.exec([...base, ...CODEC[format], out]);
+    if (format === "m4a" && isAac && isPlain(options)) code = await ff.exec([...base, "-c:a", "copy", out]); // no re-encoding: seconds, original quality
+    if (code !== 0) code = await ff.exec([...base, ...buildEncodeArgs(format, options, duration), out]);
     ff.off("progress", onProg);
     if (code !== 0) throw new ConvertError("This file could not be converted. It may be damaged or use an unusual format.");
 
@@ -73,6 +69,27 @@ async function extractAudio(file: File, format: AudioOutputFormat, onProgress: (
   }
 }
 
+function TimeField({ label, value, onChange }: { label: string; value: number; onChange: (seconds: number) => void }) {
+  const t = splitSeconds(value);
+  const part = (key: "h" | "m" | "s" | "cs", max: number, name: string) => (
+    <input
+      type="number" inputMode="numeric" min={0} max={max} aria-label={`${label} ${name}`} value={t[key]}
+      className="w-14 rounded-lg border border-line bg-white px-2 py-2 text-center"
+      onChange={(e) => {
+        const n = Math.min(max, Math.max(0, Math.floor(Number(e.target.value) || 0)));
+        const next = { ...t, [key]: n };
+        onChange(toSeconds(next.h, next.m, next.s, next.cs));
+      }}
+    />
+  );
+  return (
+    <div className="text-sm">
+      <span className="mb-1 block font-semibold">{label} <span className="font-normal text-muted">(hh : mm : ss . cs)</span></span>
+      <div className="flex items-center gap-1">{part("h", 99, "hours")}:{part("m", 59, "minutes")}:{part("s", 59, "seconds")}.{part("cs", 99, "hundredths")}</div>
+    </div>
+  );
+}
+
 type Phase =
   | { kind: "idle" }
   | { kind: "working"; pct: number }
@@ -84,6 +101,7 @@ export function Converter() {
   const [file, setFile] = useState<File | null>(null);
   const [duration, setDuration] = useState<number | null>(null);
   const [format, setFormat] = useState<AudioOutputFormat>("mp3");
+  const [options, setOptions] = useState<AudioOptions>(DEFAULT_OPTIONS);
   const [phase, setPhase] = useState<Phase>({ kind: "idle" });
   const [error, setError] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
@@ -139,11 +157,16 @@ export function Converter() {
     if (!file || busy) return;
     const chosen = file;
     const fmt = format;
+    const problem = validateOptions(options, duration);
+    if (problem) {
+      setError(problem);
+      return;
+    }
     setError(null);
     cancelled.current = false;
     setPhase({ kind: "working", pct: 0 });
     try {
-      const blob = await extractAudio(chosen, fmt, (pct) => setPhase({ kind: "working", pct }));
+      const blob = await extractAudio(chosen, fmt, options, duration, (pct) => setPhase({ kind: "working", pct }));
       setPhase({ kind: "done", url: URL.createObjectURL(blob), name: buildDownloadName(chosen.name, fmt), size: blob.size, format: fmt });
     } catch (err) {
       setPhase({ kind: "idle" });
@@ -245,6 +268,64 @@ export function Converter() {
           })}
         </div>
       </fieldset>
+
+      {/* Advanced settings */}
+      <details className="mt-6 rounded-2xl border border-line">
+        <summary className="cursor-pointer select-none px-4 py-3 text-sm font-semibold">Advanced settings (optional)</summary>
+        <fieldset className="grid gap-4 px-4 pb-4" disabled={busy}>
+          <div className="grid grid-cols-2 gap-3">
+            <label className="text-sm">
+              <span className="mb-1 block font-semibold">Audio bitrate</span>
+              <select
+                className="w-full rounded-lg border border-line bg-white px-2 py-2 disabled:opacity-50"
+                value={options.bitrate}
+                disabled={format === "wav"}
+                onChange={(e) => setOptions({ ...options, bitrate: e.target.value as AudioOptions["bitrate"] })}
+              >
+                <option value="auto">Auto</option>
+                {["64", "128", "192", "256", "320"].map((b) => <option key={b} value={b}>{b} kbps</option>)}
+              </select>
+            </label>
+            <label className="text-sm">
+              <span className="mb-1 block font-semibold">Sample rate</span>
+              <select
+                className="w-full rounded-lg border border-line bg-white px-2 py-2"
+                value={options.sampleRate}
+                onChange={(e) => setOptions({ ...options, sampleRate: e.target.value as AudioOptions["sampleRate"] })}
+              >
+                <option value="auto">Auto</option>
+                <option value="22050">22,050 Hz</option>
+                <option value="44100">44,100 Hz (CD)</option>
+                <option value="48000">48,000 Hz (DVD)</option>
+              </select>
+            </label>
+          </div>
+
+          <label className="text-sm">
+            <span className="mb-1 block font-semibold">Volume: {options.volume}%</span>
+            <input
+              type="range" min={0} max={MAX_VOLUME} step={5} value={options.volume} className="w-full"
+              onChange={(e) => setOptions({ ...options, volume: Number(e.target.value) })}
+            />
+            <span className="text-xs text-muted">100% is the original volume. 200% doubles it, 50% halves it.</span>
+          </label>
+
+          <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
+            <label className="flex items-center gap-2"><input type="checkbox" checked={options.fadeIn} onChange={(e) => setOptions({ ...options, fadeIn: e.target.checked })} /> Fade in</label>
+            <label className="flex items-center gap-2"><input type="checkbox" checked={options.fadeOut} onChange={(e) => setOptions({ ...options, fadeOut: e.target.checked })} /> Fade out</label>
+            <label className="flex items-center gap-2"><input type="checkbox" checked={options.reverse} onChange={(e) => setOptions({ ...options, reverse: e.target.checked })} /> Reverse audio</label>
+          </div>
+          {options.reverse && <p className="-mt-2 text-xs text-muted">Reversing holds the whole clip in memory, so use it on short clips or trim first.</p>}
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <TimeField label="Trim start" value={options.trimStart} onChange={(v) => setOptions({ ...options, trimStart: v })} />
+            <TimeField label="Trim end" value={options.trimEnd} onChange={(v) => setOptions({ ...options, trimEnd: v })} />
+          </div>
+          <p className="-mt-2 text-xs text-muted">Leave both at 0 to convert the whole video. Trim end 0 means until the end.</p>
+
+          <button type="button" onClick={() => setOptions(DEFAULT_OPTIONS)} className="justify-self-start text-sm font-semibold text-brand-700 hover:underline">Reset all options</button>
+        </fieldset>
+      </details>
 
       {/* 3. Convert */}
       <div className="mt-6">
