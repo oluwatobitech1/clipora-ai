@@ -21,6 +21,8 @@ export interface ToolOption {
 export interface ToolDef {
   slug: string;
   label: string;
+  /** A few words for the tool cards on the home page. */
+  short: string;
   group: ToolGroup;
   engine: ToolEngine;
   /** Page title (browser tab and Google). */
@@ -131,7 +133,7 @@ const mp4Faq = [
 export const TOOLS: ToolDef[] = [
   /* ---------- Video ---------- */
   {
-    slug: "mp4-converter", label: "MP4 Converter", group: "Video Converter", engine: "video",
+    slug: "mp4-converter", short: "Any video to MP4", label: "MP4 Converter", group: "Video Converter", engine: "video",
     pageTitle: "MP4 Converter: convert any video to MP4 online, free",
     description: "Convert MOV, AVI, MKV, WebM and more to MP4 for free. No sign-up, and your video never leaves your device.",
     heading: "Convert any video to ", accent: "MP4",
@@ -140,7 +142,7 @@ export const TOOLS: ToolDef[] = [
     outputs: [{ id: "mp4", label: "MP4", hint: "Plays everywhere" }], options: [HEIGHT], faq: mp4Faq,
   },
   {
-    slug: "mov-to-mp4", label: "MOV to MP4", group: "Video Converter", engine: "video",
+    slug: "mov-to-mp4", short: "iPhone and Mac videos to MP4", label: "MOV to MP4", group: "Video Converter", engine: "video",
     pageTitle: "MOV to MP4 Converter: free and private",
     description: "Turn iPhone and Mac MOV videos into MP4 files that play on any device. Free, and nothing is uploaded.",
     heading: "Convert MOV to ", accent: "MP4",
@@ -149,7 +151,7 @@ export const TOOLS: ToolDef[] = [
     outputs: [{ id: "mp4", label: "MP4", hint: "Plays everywhere" }], options: [HEIGHT], faq: mp4Faq,
   },
   {
-    slug: "video-converter", label: "Video Converter", group: "Video Converter", engine: "video",
+    slug: "video-converter", short: "MP4, WebM, MKV, MOV, AVI", label: "Video Converter", group: "Video Converter", engine: "video",
     pageTitle: "Video Converter: MP4, WebM, MKV, MOV, AVI online, free",
     description: "Convert videos between MP4, WebM, MKV, MOV and AVI for free. Private, with no upload.",
     heading: "Convert videos to ", accent: "any format",
@@ -167,7 +169,7 @@ export const TOOLS: ToolDef[] = [
     faq: [{ q: "Which format should I choose?", a: "MP4 plays on almost everything. WebM suits websites. MKV and MOV keep video flexible for editing. AVI is for older players." }, PRIVATE],
   },
   {
-    slug: "video-to-gif", label: "Video to GIF", group: "Video Converter", engine: "gif",
+    slug: "video-to-gif", short: "Turn a clip into a GIF", label: "Video to GIF", group: "Video Converter", engine: "gif",
     pageTitle: "Video to GIF Converter: make a GIF from a video, free",
     description: "Turn any video clip into an animated GIF. Free, with no watermark, and nothing is uploaded.",
     heading: "Turn a video into a ", accent: "GIF",
@@ -185,7 +187,7 @@ export const TOOLS: ToolDef[] = [
 
   /* ---------- Audio ---------- */
   {
-    slug: "mp3-converter", label: "MP3 Converter", group: "Audio Converter", engine: "audio",
+    slug: "mp3-converter", short: "Any audio or video to MP3", label: "MP3 Converter", group: "Audio Converter", engine: "audio",
     pageTitle: "MP3 Converter: convert audio and video to MP3, free",
     description: "Convert WAV, M4A, OGG, FLAC and video files to MP3 for free. Private, with no upload.",
     heading: "Convert anything to ", accent: "MP3",
@@ -195,7 +197,7 @@ export const TOOLS: ToolDef[] = [
     faq: [{ q: "Can I convert many files at once?", a: "Yes. Choose several files and download them one by one or all together in a ZIP." }, PRIVATE],
   },
   {
-    slug: "audio-converter", label: "Audio Converter", group: "Audio Converter", engine: "audio",
+    slug: "audio-converter", short: "MP3, WAV, M4A, OGG, FLAC", label: "Audio Converter", group: "Audio Converter", engine: "audio",
     pageTitle: "Audio Converter: MP3, WAV, M4A, OGG, FLAC online, free",
     description: "Convert audio between MP3, WAV, M4A, OGG and FLAC for free. Private, with no upload.",
     heading: "Convert audio to ", accent: "any format",
@@ -212,7 +214,7 @@ export const TOOLS: ToolDef[] = [
     faq: [{ q: "Which format should I choose?", a: "MP3 plays on almost everything. M4A is great on iPhone and Mac. WAV and FLAC keep full quality, with FLAC making a smaller file." }, PRIVATE],
   },
   {
-    slug: "mp4-to-mp3", label: "MP4 to MP3", group: "Audio Converter", engine: "video-audio",
+    slug: "mp4-to-mp3", short: "Pull the audio out of a video", label: "MP4 to MP3", group: "Audio Converter", engine: "video-audio",
     pageTitle: "MP4 to MP3 Converter: extract audio from a video, free",
     description: "Convert MP4 video to MP3 audio for free. Private, fast, and nothing is uploaded.",
     heading: "Convert MP4 to ", accent: "MP3",
@@ -220,7 +222,7 @@ export const TOOLS: ToolDef[] = [
     chooseLabel: "Choose a video", exts: VIDEO_EXTS, multiple: false, outputs: [], options: [], faq: [],
   },
   {
-    slug: "video-to-mp3", label: "Video to MP3", group: "Audio Converter", engine: "video-audio",
+    slug: "video-to-mp3", short: "Any video to MP3, WAV or M4A", label: "Video to MP3", group: "Audio Converter", engine: "video-audio",
     pageTitle: "Video to MP3 Converter: free and private",
     description: "Convert any video to MP3, WAV or M4A for free. Private, fast, and nothing is uploaded.",
     heading: "Convert video to ", accent: "MP3",
@@ -230,7 +232,7 @@ export const TOOLS: ToolDef[] = [
 
   /* ---------- Images ---------- */
   {
-    slug: "jpg-to-pdf", label: "JPG to PDF", group: "Image Converter", engine: "images-to-pdf",
+    slug: "jpg-to-pdf", short: "Pictures into one PDF", label: "JPG to PDF", group: "Image Converter", engine: "images-to-pdf",
     pageTitle: "JPG to PDF Converter: combine pictures into a PDF, free",
     description: "Turn one or many JPG pictures into a single PDF. Free, private, and nothing is uploaded.",
     heading: "Convert JPG to ", accent: "PDF",
@@ -240,7 +242,7 @@ export const TOOLS: ToolDef[] = [
     faq: [{ q: "Can I put many pictures in one PDF?", a: "Yes. Choose several pictures. Each becomes one page, in the order you choose them." }, PRIVATE],
   },
   {
-    slug: "image-to-pdf", label: "Image to PDF", group: "Image Converter", engine: "images-to-pdf",
+    slug: "image-to-pdf", short: "JPG, PNG, WebP, HEIC to PDF", label: "Image to PDF", group: "Image Converter", engine: "images-to-pdf",
     pageTitle: "Image to PDF Converter: JPG, PNG, WebP, HEIC to PDF",
     description: "Turn JPG, PNG, WebP, HEIC and other pictures into a PDF. Free, private, and nothing is uploaded.",
     heading: "Convert images to ", accent: "PDF",
@@ -250,7 +252,7 @@ export const TOOLS: ToolDef[] = [
     faq: [{ q: "Which pictures can I use?", a: "JPG, PNG, WebP, GIF, BMP, AVIF and iPhone HEIC pictures. Animated GIFs use their first frame." }, PRIVATE],
   },
   {
-    slug: "pdf-to-jpg", label: "PDF to JPG", group: "Image Converter", engine: "pdf-to-jpg",
+    slug: "pdf-to-jpg", short: "Every PDF page as a picture", label: "PDF to JPG", group: "Image Converter", engine: "pdf-to-jpg",
     pageTitle: "PDF to JPG Converter: turn PDF pages into pictures, free",
     description: "Convert every page of a PDF into a JPG picture. Free, private, and nothing is uploaded.",
     heading: "Convert PDF to ", accent: "JPG",
@@ -264,7 +266,7 @@ export const TOOLS: ToolDef[] = [
     faq: [{ q: "I have many pages. How do I get them all?", a: "Each page is made as its own picture. Download them one by one, or all together in a ZIP." }, PRIVATE],
   },
   {
-    slug: "heic-to-jpg", label: "HEIC to JPG", group: "Image Converter", engine: "image",
+    slug: "heic-to-jpg", short: "iPhone photos to JPG", label: "HEIC to JPG", group: "Image Converter", engine: "image",
     pageTitle: "HEIC to JPG Converter: iPhone photos to JPG, free",
     description: "Convert iPhone HEIC photos to JPG that open anywhere. Free, private, and nothing is uploaded.",
     heading: "Convert HEIC to ", accent: "JPG",
@@ -274,7 +276,7 @@ export const TOOLS: ToolDef[] = [
     faq: [{ q: "Can I convert many photos at once?", a: "Yes. Choose several photos and download them one by one or all together in a ZIP." }, PRIVATE],
   },
   {
-    slug: "image-converter", label: "Image Converter", group: "Image Converter", engine: "image",
+    slug: "image-converter", short: "JPG, PNG, WebP, resize", label: "Image Converter", group: "Image Converter", engine: "image",
     pageTitle: "Image Converter: JPG, PNG, WebP online, free",
     description: "Convert pictures between JPG, PNG and WebP, or shrink them. Free, private, and nothing is uploaded.",
     heading: "Convert images to ", accent: "any format",
@@ -291,7 +293,7 @@ export const TOOLS: ToolDef[] = [
 
   /* ---------- Documents ---------- */
   {
-    slug: "pdf-to-word", label: "PDF to WORD", group: "Document & Ebook", engine: "document",
+    slug: "pdf-to-word", short: "PDF text into Word", label: "PDF to WORD", group: "Document & Ebook", engine: "document",
     pageTitle: "PDF to Word Converter: PDF to DOCX online, free",
     description: "Turn a PDF into an editable Word document. Free, private, and nothing is uploaded.",
     heading: "Convert PDF to ", accent: "Word",
@@ -302,7 +304,7 @@ export const TOOLS: ToolDef[] = [
     faq: [{ q: "Why does my Word file look different?", a: "It keeps the words, headings and lists, but not the exact layout, pictures or tables. That makes it easy to edit." }, PRIVATE],
   },
   {
-    slug: "epub-to-pdf", label: "EPUB to PDF", group: "Document & Ebook", engine: "document",
+    slug: "epub-to-pdf", short: "E-book to PDF", label: "EPUB to PDF", group: "Document & Ebook", engine: "document",
     pageTitle: "EPUB to PDF Converter: free and private",
     description: "Convert an EPUB e-book into a PDF you can print or share. Free, and nothing is uploaded.",
     heading: "Convert EPUB to ", accent: "PDF",
@@ -313,7 +315,7 @@ export const TOOLS: ToolDef[] = [
     faq: [{ q: "Are the pictures in my book kept?", a: "No. The PDF has the text, headings and lists. Pictures and special fonts are left out." }, PRIVATE],
   },
   {
-    slug: "epub-to-mobi", label: "EPUB to MOBI", group: "Document & Ebook", engine: "document",
+    slug: "epub-to-mobi", short: "E-book for older Kindles", label: "EPUB to MOBI", group: "Document & Ebook", engine: "document",
     pageTitle: "EPUB to MOBI Converter: free and private",
     description: "Convert an EPUB e-book to MOBI for older Kindles and e-readers. Free, and nothing is uploaded.",
     heading: "Convert EPUB to ", accent: "MOBI",
@@ -324,7 +326,7 @@ export const TOOLS: ToolDef[] = [
     faq: [{ q: "Will it work on my Kindle?", a: "MOBI works on older Kindles and many reading apps. Newer Kindles prefer EPUB, which they accept through Amazon's Send to Kindle." }, PRIVATE],
   },
   {
-    slug: "document-converter", label: "Document Converter", group: "Document & Ebook", engine: "document",
+    slug: "document-converter", short: "PDF, Word, EPUB, text", label: "Document Converter", group: "Document & Ebook", engine: "document",
     pageTitle: "Document Converter: PDF, Word, EPUB, text to PDF, DOCX, MOBI",
     description: "Convert PDF, Word, EPUB, text, Markdown and HTML files between PDF, Word, text and MOBI. Free and private.",
     heading: "Convert documents to ", accent: "any format",
