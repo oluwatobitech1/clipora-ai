@@ -18,6 +18,8 @@
     "@framevox/shared": "*",
     "@huggingface/transformers": "^3.7.6",
     "@supabase/supabase-js": "^2.45.0",
+    "heic2any": "^0.0.4",
+    "pdfjs-dist": "^6.2.108",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-router-dom": "^7.0.0"

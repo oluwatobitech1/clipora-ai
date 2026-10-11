@@ -95,12 +95,12 @@ type Phase =
   | { kind: "working"; pct: number }
   | { kind: "done"; url: string; name: string; size: number; format: AudioOutputFormat };
 
-export function Converter() {
+export function Converter({ initialFormat = "mp3" }: { initialFormat?: AudioOutputFormat }) {
   const inputId = useId();
   const hintId = useId();
   const [file, setFile] = useState<File | null>(null);
   const [duration, setDuration] = useState<number | null>(null);
-  const [format, setFormat] = useState<AudioOutputFormat>("mp3");
+  const [format, setFormat] = useState<AudioOutputFormat>(initialFormat);
   const [options, setOptions] = useState<AudioOptions>(DEFAULT_OPTIONS);
   const [phase, setPhase] = useState<Phase>({ kind: "idle" });
   const [error, setError] = useState<string | null>(null);

@@ -1,6 +1,14 @@
 # Video to Audio
 
-A one-page website that converts a video to MP3, WAV or M4A. Everything happens in the visitor's browser: no server, no sign-up, nothing is uploaded.
+A website of free converters that all run in the visitor's browser: no server, no sign-up, nothing is uploaded.
+
+## The tools (each has its own page, linked in the footer)
+- Video: MP4 Converter, MOV to MP4, Video Converter (MP4, WebM, MKV, MOV, AVI), Video to GIF
+- Audio: MP3 Converter, Audio Converter (MP3, WAV, M4A, OGG, FLAC), MP4 to MP3, Video to MP3
+- Image: JPG to PDF, Image to PDF, PDF to JPG, HEIC to JPG, Image Converter (JPG, PNG, WebP)
+- Document: PDF to Word, EPUB to PDF, EPUB to MOBI, Document Converter (PDF, Word, EPUB, text, Markdown, HTML)
+
+Add or change a tool in `apps/web/src/lib/tools.ts`. The conversion code is in `apps/web/src/lib/engines.ts`.
 
 ## Run it on your computer
 1. Install Node.js 22 or newer.
@@ -14,8 +22,9 @@ A one-page website that converts a video to MP3, WAV or M4A. Everything happens 
 - No environment variables are needed.
 
 ## Where things are
-- `apps/web/src/App.tsx`: the page (headline, features, how it works, questions).
-- `apps/web/src/components/Converter.tsx`: the converter itself.
+- `apps/web/src/App.tsx`: the pages (routes). `Home.tsx` is the video-to-audio page, `components/ToolPage.tsx` is every other tool.
+- `apps/web/src/components/Layout.tsx`: header and the footer with all the tool links.
+- `apps/web/src/components/Converter.tsx`: the video-to-audio converter. `ToolConverter.tsx` is the one used by the other tools.
 - `apps/web/src/components/Logo.tsx` and `apps/web/public/favicon.svg`: the logo.
 - `apps/web/index.html`: page title and description for Google and link previews.
 

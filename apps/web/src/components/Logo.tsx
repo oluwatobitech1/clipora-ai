@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 /** Play button turning into sound waves: video in, audio out. */
 export function LogoMark({ size = 36 }: { size?: number }) {
   return (
@@ -18,11 +20,11 @@ export function LogoMark({ size = 36 }: { size?: number }) {
 
 export function Logo() {
   return (
-    <a href="/" className="group flex items-center gap-2.5 font-display font-extrabold tracking-tight text-ink" aria-label="Video to Audio">
+    <Link to="/" className="group flex items-center gap-2.5 font-display font-extrabold tracking-tight text-ink" aria-label="Video to Audio">
       <span className="transition-transform duration-300 group-hover:rotate-[-6deg] group-hover:scale-105">
         <LogoMark />
       </span>
       <span className="text-xl">Video to Audio</span>
-    </a>
+    </Link>
   );
 }

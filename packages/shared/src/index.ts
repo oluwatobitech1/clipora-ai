@@ -10,8 +10,8 @@ export const TAGLINE = "Every video has more to give.";
 export const MAX_UPLOAD_MB = 500;
 
 /** Initial formats from the brief. Each is verified against the real FFmpeg pipeline in Milestone 2. */
-export const SUPPORTED_VIDEO_EXTENSIONS = [".mp4", ".mov", ".webm", ".mkv"] as const;
-export const SUPPORTED_AUDIO_EXTENSIONS = [".mp3", ".wav", ".m4a"] as const;
+export const SUPPORTED_VIDEO_EXTENSIONS = [".mp4", ".m4v", ".mov", ".webm", ".mkv", ".avi", ".wmv", ".flv", ".3gp", ".mpg", ".mpeg", ".ogv"] as const;
+export const SUPPORTED_AUDIO_EXTENSIONS = [".mp3", ".wav", ".m4a", ".aac", ".ogg", ".opus", ".flac"] as const;
 export const SUPPORTED_EXTENSIONS = [
   ...SUPPORTED_VIDEO_EXTENSIONS,
   ...SUPPORTED_AUDIO_EXTENSIONS,
@@ -147,7 +147,7 @@ export function validateMediaFile(file: FileLike, maxMb: number = MAX_UPLOAD_MB)
       message: `This file type is not supported. Use ${SUPPORTED_EXTENSIONS_LABEL}.`,
     };
   }
-  if (file.type && !file.type.startsWith("video/") && !file.type.startsWith("audio/")) {
+  if (file.type && !file.type.startsWith("video/") && !file.type.startsWith("audio/") && file.type !== "application/ogg") {
     return {
       ok: false,
       code: "unsupported-type",
